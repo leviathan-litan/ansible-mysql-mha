@@ -13,12 +13,13 @@
     # 调用：call_do_mha.sh
     #job: "nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &"
     # 调用：do_mha.sh
-    job: "sh {{ path_mha_extension_script_do_mha }} {{ mha_conf_app_name }}"
+    # -- 每一秒执行一次
+    job: "sleep 1; sh {{ path_mha_extension_script_do_mha }} {{ mha_conf_app_name }}"
     # CRONTAB 挂到 MHA的操作系统管理用户
     user: "{{ mha_linux_user }}"
     # 分
-    # -- 每一秒执行一次
-    minute: "*/1"
+    # -- 每一分钟执行一次
+    #minute: "*/1"
     # 时
     #hour: ""
     # 日

@@ -160,9 +160,12 @@ query_cache_size   = 10383360
 #old_passwords                   = 0
 
 # 半同步
+# -- 这里的参数应该由Ansible运行时的选项来确定是否开启，而不是现在就打开
+# -- Ansible的lineinfile的替换应该是安全的单行替换
+
 # -- 插件
-plugin_dir                       = {{ semisync_plugin_dir }}
-plugin_load                      = "rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
+#plugin_dir                       = {{ semisync_plugin_dir }}
+#plugin_load                      = "rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
 
 # loose_ / 表示没有该参数就忽略掉
 
@@ -172,14 +175,14 @@ plugin_load                      = "rpl_semi_sync_master=semisync_master.so;rpl_
 #rpl_semi_sync_master_timeout      = {{ mysql_param_rpl_semi_sync_master_timeout }}
 
 # v2
-loose_rpl_semi_sync_master_enabled = 1
-loose_rpl_semi_sync_master_timeout = {{ mysql_param_rpl_semi_sync_master_timeout }}
+#loose_rpl_semi_sync_master_enabled = 1
+#loose_rpl_semi_sync_master_timeout = {{ mysql_param_rpl_semi_sync_master_timeout }}
 
 # -- 从库
 # v1
 #rpl_semi_sync_slave_enabled       = 1
 
 # v2
-loose_rpl_semi_sync_slave_enabled  = 1
+#loose_rpl_semi_sync_slave_enabled  = 1
 
 # ===================================== Finished.

@@ -1,6 +1,7 @@
 # 禁用SELinux
 - name: 禁用SELinux
   lineinfile:
+    backup: yes
     dest: /etc/selinux/config
     backrefs: no
     regexp: 'SELINUX='

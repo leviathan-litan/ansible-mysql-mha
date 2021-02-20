@@ -18,4 +18,4 @@
   when: mysql_semisync_enabled == 1
 
 # 执行初始化SQL
-#- import_tasks: mysql_execute_sql.yml
+- import_tasks: mysql_execute_sql.yml

@@ -1,4 +1,22 @@
 # ##########################################
+# 打开配置文件中的插件参数
+- name: 半同步：打开参数文件中的插件参数 / 1
+  lineinfile:
+    backup: yes
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: "#plugin_dir"
+    replace: "^plugin_dir"
+
+- name: 半同步：打开参数文件中的插件参数 / 2
+  lineinfile:
+    backup: yes
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: "#plugin_load"
+    replace: "^plugin_load"
+
+# ##########################################
 # 主库
 # 主库端安装半同步模块
 - name: 主库安装半同步模块 / semisync_slave.so
@@ -31,6 +49,7 @@
 # -- 尽量不要动态修改MySQL的参数文件
 - name: 主库 修改参数文件 / 1
   lineinfile:
+    backup: yes
     dest: "{{ path_mysql_my_cfg }}"
     backrefs: no
     regexp: 'loose_rpl_semi_sync_master_enabled'
@@ -39,6 +58,7 @@
 
 - name: 主库 修改参数文件 / 2
   lineinfile:
+    backup: yes
     dest: "{{ path_mysql_my_cfg }}"
     backrefs: no
     regexp: 'loose_rpl_semi_sync_slave_enabled'
@@ -84,6 +104,7 @@
 # 修改数据库参数文件
 - name: 从库 修改参数文件 / 1
   lineinfile:
+    backup: yes
     dest: "{{ path_mysql_my_cfg }}"
     backrefs: no
     regexp: 'loose_rpl_semi_sync_master_enabled'
@@ -92,6 +113,7 @@
 
 - name: 从库 修改参数文件 / 2
   lineinfile:
+    backup: yes
     dest: "{{ path_mysql_my_cfg }}"
     backrefs: no
     regexp: 'loose_rpl_semi_sync_slave_enabled'

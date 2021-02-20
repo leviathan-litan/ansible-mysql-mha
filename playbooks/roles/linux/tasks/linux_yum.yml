@@ -1,6 +1,7 @@
 # 配置YUM参数文件：启用RPM缓存
 - name: 配置YUM参数文件：启用RPM缓存
   lineinfile:
+    backup: yes
     dest: "{{ path_yum_conf }}"
     backrefs: no
     regexp: 'keepcache'
