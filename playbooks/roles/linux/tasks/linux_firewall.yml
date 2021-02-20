@@ -1,0 +1,6 @@
+# 关停Linux防火墙，并禁止开机启动
+- name: 关停Linux防火墙，并禁止开机启动
+  systemd:
+    name: firewalld
+    state: stopped
+    enabled: no

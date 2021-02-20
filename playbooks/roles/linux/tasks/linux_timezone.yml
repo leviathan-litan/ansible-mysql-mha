@@ -1,0 +1,11 @@
+# 修改时区为【上海】
+# -- "-f" 强制创建软链接，如果已经有，会覆盖
+
+- name: 修改时区为：上海
+  file:
+    src: /usr/share/zoneinfo/Asia/Shanghai
+    dest: /etc/localtime
+    owner: root
+    group: root
+    mode: 0755
+    state: link

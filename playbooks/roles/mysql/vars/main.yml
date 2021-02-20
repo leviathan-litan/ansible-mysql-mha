@@ -1,0 +1,215 @@
+
+# ====================================
+# 模板 / template
+
+# MySQL 本地YUM源文件
+template_yum_mysql_repo: "yum/MySQL57_7.j2"
+template_mysql_my_cfg: "mysql/my.j2"
+
+# ====================================
+# 文件 / file
+# -- 指在Ansible服务端的文件
+
+# YUM 仓库源文件 / 本地的MySQL源
+file_yum_mysql_repo: "/etc/yum.repos.d/MySQL57_7.repo"
+
+# MySQL数据库安装介质
+# 从官方网站下载的RPM Bundle
+# 下载地址：
+# https://dev.mysql.com/downloads/mysql/5.7.html
+# ------------------
+#file_mysql_install_media: "install_media/mysql-5.7.33-1.el7.x86_64.rpm-bundle.tar"
+
+file_mysql_install_media: "install_media/mysql-5.7.30-1.el7.x86_64.rpm-bundle.tar"
+
+# Percona Toolkit
+file_percona_toolkit_install_media: "install_media/percona-toolkit-3.3.0-1.el7.x86_64.rpm"
+
+# SQL文件
+# -- 默认上传到【脚本路径】的变量指向的位置
+file_sql_init: "sql/init.sql"
+
+# ====================================
+# 路径 / path
+# -- 指要发送到远端服务器的文件的绝对路径
+
+# MySQL配置文件
+path_mysql_my_cfg: "/etc/my.cnf"
+
+# MySQL错误日志文件
+path_mysql_error_log: "/var/log/mysqld.log"
+
+# SSH等价关系文件
+path_ssh_nopasswd_known_hosts: "{{ directory_ssh_nopasswd }}/authorized_keys"
+
+# 上传后的SQL文件
+path_file_sql_init: "{{ directory_script }}/init.sql"
+
+# ====================================
+# 文件夹 / directory
+# -- 指要在远端服务器上创建或存在的文件夹路径
+
+# 数据目录
+directory_data: "/data1"
+
+# MySQL 存放数据的基础目录
+directory_mysql_data_base: "{{ directory_data }}/mysql"
+
+# MySQL 数据目录
+directory_mysql_data: "{{ directory_mysql_data_base }}/datadir"
+
+# MySQL 临时目录
+directory_mysql_temp: "{{ directory_mysql_data_base }}/tempdir"
+
+# MySQL 二进制日志目录 / Binlog
+directory_mysql_log_binlog: "{{ directory_mysql_data_base }}/binlog"
+
+# MySQL 慢日志目录
+directory_mysql_log_slowlog: "{{ directory_mysql_data_base }}/slowlog"
+
+# MySQL Relay Log
+directory_mysql_log_relaylog: "{{ directory_mysql_data_base }}/relaylog"
+
+# MySQL SOCKET
+directory_mysql_socket: "{{ directory_mysql_data_base }}/socket"
+
+# MySQL PID
+directory_mysql_pid: "{{ directory_mysql_data_base }}/pid"
+
+# 上传软件目录
+directory_software_upload: "/software_upload"
+
+# MySQL 安装介质解压目录
+directory_mysql_install_media_unzip: "{{ directory_software_upload }}/mysql"
+
+# 备份目录
+directory_backup: "/backup"
+
+# 脚本目录
+directory_script: "/script"
+
+# 整体调用
+list_directory:
+  #- "{{ directory_data }}"
+  - "{{ directory_mysql_data_base }}"
+  - "{{ directory_mysql_data }}"
+  - "{{ directory_mysql_temp }}"
+  - "{{ directory_mysql_log_binlog }}"
+  - "{{ directory_mysql_log_slowlog }}"
+  - "{{ directory_mysql_log_relaylog }}"
+  - "{{ directory_mysql_socket }}"
+  - "{{ directory_mysql_pid }}"
+  #- "{{ directory_software_upload }}"
+  - "{{ directory_mysql_install_media_unzip }}"
+  #- "{{ directory_backup }}"
+  #- "{{ directory_script }}"
+
+# ====================================
+# MySQL 数据库参数
+
+# 数据库使用什么方式安装
+# 0 异步
+# 1 半同步
+mysql_semisync_enabled: "0"
+
+# MySQL 端口
+# -- 默认的端口配置
+mysql_param_port: "3306"
+
+# InnoDB 数据缓冲区
+# -- 最好设置为系统可用内存的一半
+mysql_param_innodb_buffer_pool_size: "1G"
+
+# Binlog 二进制日志的尺寸
+mysql_param_max_binlog_size: "100M"
+
+# Binlog 保留天数
+mysql_param_expire_logs_days: "7"
+
+# 半同步超时时间
+mysql_param_rpl_semi_sync_master_timeout: "1000"
+
+# ====================================
+# 用户 / MySQL用户
+
+# -- root@localhost
+mysql_database_user_root_password: "密码"
+
+# ====================================
+# MySQL 主从复制
+
+# -- 主从复制的主库端的连接信息
+mysql_replication_master_host: "192.168.232.11"
+mysql_replication_master_port: "3306"
+
+# -- 用于主从复制的用户
+mysql_replication_user_name: "repl"
+mysql_replication_user_password: "密码"
+
+# -- MHA的数据库用户
+mysql_mha_user_name: "mha"
+mysql_mha_user_password: "密码"
+
+# ====================================
+# MySQL 半同步
+
+# 半同步的模块地址
+semisync_plugin_dir: "/usr/lib64/mysql/plugin"
+
+# ====================================
+# 其他变量
+
+# YUM 要安装的RPM软件包
+# -- 最好按照字母顺序写
+# -- 或者按照关联度依次排列
+list_rpm_package: 
+  - mysql-community-server
+  - mysql-community-devel
+  - percona-toolkit
+
+# --------------------------
+# 操作系统组
+list_linux_group:
+  # 数据库 组
+  - group_name: mysql
+    gid: 2000
+
+# --------------------------
+# 操作系统用户
+list_linux_user:
+  # MySQL用户
+  - username: "mysql"
+    uid: 2000
+    # group 只能是字符串
+    group: "mysql"
+    # groups 可以是数组
+    groups: 
+      - "mysql"
+    password: "密码"
+    dir_home: "/home/mysql"
+    shell: "/bin/bash"
+    comment: "MySQL数据库的Linux系统用户"
+
+# 其他用户
+list_mysql_user:
+  # ---------------
+  # MHA管理用户
+  - username: "{{ mysql_mha_user_name }}"
+    host: "%"
+    password: "{{ mysql_mha_user_password }}"
+    priv: "*.*:ALL"
+  # ---------------
+  # 公共用户
+  - username: "public1"
+    host: "%"
+    password: "密码"
+    priv: "*.*:ALL"
+  # ---------------
+  # 主从复制用户
+  - username: "{{ mysql_replication_user_name }}"
+    host: "%"
+    password: "{{ mysql_replication_user_password }}"
+    # 注意：
+    # 分配多个权限的时候，只能用逗号分隔，不能包含空格
+    priv: "*.*:REPLICATION SLAVE,REPLICATION CLIENT"
+  # ---------------

@@ -1,0 +1,68 @@
+# 获取主库端的主库信息
+# -- 只有是从库的时候，才需要执行这一步
+- name: 从库：获取主库信息
+  mysql_replication:
+    mode: getmaster
+    # ------------
+    # 登陆MySQL
+    login_user: root
+    login_password: "{{ mysql_database_user_root_password }}"
+    # ------------
+  delegate_to: "{{ mysql_replication_master_host }}"
+  register: mysql_replication_master_status
+  when: db_role == "slave"
+
+# 输出主库信息
+- name: "主库：Master Status"
+  debug:
+    msg: "File【{{ mysql_replication_master_status['File'] }}】 / Position【{{ mysql_replication_master_status['Position'] }}】"
+  when: db_role == "slave"
+
+# 从库，执行Change Master
+# -- 只有是从库的时候，才需要执行这一步
+- name: "从库：Change Master"
+  mysql_replication:
+    mode: changemaster
+    # ------------
+    # 登陆MySQL
+    login_user: root
+    login_password: "{{ mysql_database_user_root_password }}"
+    # ------------
+    # Change Master
+    master_host: "{{ mysql_replication_master_host }}"
+    master_port: "{{ mysql_replication_master_port }}"
+    master_user: "{{ mysql_replication_user_name }}"
+    master_password: "{{ mysql_replication_user_password }}"
+    master_log_file: "{{ mysql_replication_master_status['File'] }}"
+    master_log_pos: "{{ mysql_replication_master_status['Position'] }}"
+  when: db_role == "slave"
+
+# 从库：Start Slave
+# -- 只有是从库的时候，才需要执行这一步
+- name: 从库：Start Slave
+  mysql_replication:
+    mode: startslave
+    # ------------
+    # 登陆MySQL
+    login_user: root
+    login_password: "{{ mysql_database_user_root_password }}"
+    # ------------
+  when: db_role == "slave"
+
+# 从库：获取从库信息
+- name: 从库：获取从库信息
+  mysql_replication:
+    mode: getslave
+    # ------------
+    # 登陆MySQL
+    login_user: root
+    login_password: "{{ mysql_database_user_root_password }}"
+    # ------------
+  register: mysql_replication_slave_status
+  when: db_role == "slave"
+
+# 输出从库信息
+- name: "从库：Slave Status"
+  debug:
+    msg: "Slave_IO_Running【{{ mysql_replication_slave_status['Slave_IO_Running'] }}】 / Slave_SQL_Running【{{ mysql_replication_slave_status['Slave_SQL_Running'] }}】 / Slave_SQL_Running_State【{{ mysql_replication_slave_status['Slave_SQL_Running_State'] }}】 / Seconds_Behind_Master【{{ mysql_replication_slave_status['Seconds_Behind_Master'] }}】"
+  when: db_role == "slave"

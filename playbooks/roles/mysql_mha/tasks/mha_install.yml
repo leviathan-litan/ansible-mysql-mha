@@ -1,0 +1,52 @@
+# 刷新YUM缓存
+- name: 刷新YUM缓存
+  shell: yum makecache
+
+# 使用YUM执行RPM的安装
+#- name: YUM / Install RPM
+#  yum:
+#    name: "{{ list_rpm_package }}"
+#    state: present
+#  ignore_errors: yes
+
+# 通过发送YUM命令安装
+- name: YUM / Install RPM
+  shell: "yum install -y {{ item }}"
+  with_items:
+    - "{{ list_rpm_package }}"
+
+# 在管理节点：上传Node与Manager安装包
+- name: "管理节点：上传安装包"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ directory_mha_install_media }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  with_items:
+    - "{{ list_mha_install_media_manager }}"
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+# 在被管节点：上传Node安装包
+- name: "被管节点：上传安装包"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ directory_mha_install_media }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  with_items:
+    - "{{ list_mha_install_media_node }}"
+  when: mha_role == "mha_node"
+
+# 执行RPM安装 / 管理节点
+- name: RPM Install
+  shell: "rpm -ivh {{ directory_mha_install_media }}/*.rpm"
+  ignore_errors: yes
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+# 执行RPM安装 / 被管节点
+- name: RPM Install
+  shell: "rpm -ivh {{ directory_mha_install_media }}/*.rpm"
+  ignore_errors: yes
+  when: mha_role == "mha_node"

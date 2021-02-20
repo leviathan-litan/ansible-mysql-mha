@@ -1,0 +1,39 @@
+! =====================================
+! KeepAlived / 配置文件
+! =====================================
+! Configuration File for keepalived
+
+global_defs {
+   router_id LVS_DEVEL
+   vrrp_skip_check_adv_addr
+   vrrp_garp_interval 0
+   vrrp_gna_interval 0
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+
+    ! 目标服务器上，VIP要绑定到哪块网卡上
+    ! -- 一定要正确设置，否则VIP资源拉起失败
+    interface {{ keepalived_nic_name }}
+    
+    ! 相同的KeepAlive的集群，Router ID 必须一致
+    virtual_router_id {{ keepalived_virtual_router_id }}
+
+    ! 为了配合MHA，权重值的规则如下
+    ! 活动节点：250
+    ! 从属节点：200
+    ! 权重变动时，跨步数：50
+    priority {{ keepalived_priority }}
+
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+
+    ! 虚拟IP（VIP）
+    virtual_ipaddress {
+        {{ keepalived_virtual_ip }}
+    }
+}

@@ -1,0 +1,5 @@
+# 目标服务器 目录相关操作
+- import_tasks: keepalived_directory.yml
+
+# 执行软件安装
+- import_tasks: keepalived_install.yml

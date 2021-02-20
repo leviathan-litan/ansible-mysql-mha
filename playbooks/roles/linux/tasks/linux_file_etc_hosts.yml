@@ -1,0 +1,24 @@
+# 查看Ansible Facts
+# --- 这里原本是希望通过Ansible的变量循环，自动生成Linux的文件：/etc/hosts
+# --- 后面再实现
+- name: 查看Ansible Facts
+  debug:
+    msg: "主机名【{{ ansible_hostname }}】IP地址【{{ ansible_default_ipv4['address'] }}】"
+
+# 将Ansible服务端准备好的文件拷贝到目标服务器的目标路径 / 文件的方式
+#- name: "文件：{{ path_linux_hosts }}"
+#  copy:
+#    force: yes
+#    backup: yes
+#    src: "{{ file_linux_hosts }}"
+#    dest: "{{ path_linux_hosts }}"
+
+# 将Ansible服务端准备好的文件拷贝到目标服务器的目标路径 / 模板的方式
+- name: "文件：{{ path_linux_hosts }}"
+  template:
+     backup: yes
+     src: "{{ template_linux_hosts }}"
+     dest: "{{ path_linux_hosts }}"
+     owner: root
+     group: root
+     mode: 0755

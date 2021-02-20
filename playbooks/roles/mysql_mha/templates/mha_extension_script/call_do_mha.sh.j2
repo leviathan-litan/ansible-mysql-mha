@@ -1,0 +1,29 @@
+#!/bin/bash
+# =====================================
+# MySQL MHA / 扩展脚本 / 后台守护脚本
+# =====================================
+# --- 通过nohup在后台持续运行
+
+# 变量
+
+# MHA 应用配置文件名
+# 例如：app_1.cnf，则应该写：【app_1】
+str_mha_app=$1
+
+# 调用【do_mha.sh】
+while [ true ]
+do
+  # 通过MHA的操作系统管理用户，执行对【do_mha.sh】的调用
+  # 如果调用该脚本的用户就是MHA的操作系统管理用户，那么这里就没必要再切一次了
+  # v1
+  #su - {{ mha_linux_user }} -c "sh {{ path_mha_extension_script_do_mha }} $str_mha_app"
+  # v2
+  sh {{ path_mha_extension_script_do_mha }} $str_mha_app
+
+  # 调用间隔时间（单位：秒）
+  sleep 3
+
+done
+
+# =====================================
+# Finished.

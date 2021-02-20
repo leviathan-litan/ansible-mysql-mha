@@ -1,0 +1,34 @@
+# 测试：Say Hello
+- name: say hello
+  debug:
+    msg: 'Hello, Ansible.'
+
+# 启动MySQL服务
+- name: mysqld start
+  service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+# 重启MySQL服务
+- name: mysqld restart
+  service:
+    name: mysqld
+    state: restarted
+
+# 重新加载MySQL服务
+- name: mysqld reload
+  service:
+    name: mysqld
+    state: reloaded
+
+# 停止MySQL服务
+- name: mysqld stop
+  service:
+    name: mysqld
+    state: stopped
+
+# 修改【root@localhost】口令成功
+- name: "mysql user root@localhost password has been changed."
+  debug:
+    msg: "MySQL用户【root@localhost】临时口令已经修改"

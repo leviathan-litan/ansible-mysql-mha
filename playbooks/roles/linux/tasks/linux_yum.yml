@@ -1,0 +1,64 @@
+# 配置YUM参数文件：启用RPM缓存
+- name: 配置YUM参数文件：启用RPM缓存
+  lineinfile:
+    dest: "{{ path_yum_conf }}"
+    backrefs: no
+    regexp: 'keepcache'
+    line: 'keepcache=1'
+
+# 创建上传离线RPM目录
+#- name: 创建上传离线RPM的目录
+#  file:
+#    path: "{{ directory_yum_install_media }}"
+#    owner: root
+#    group: root
+#    mode: 0755
+#    state: directory
+
+# 上传离线YUM源
+- name: 上传YUM离线RPM包
+  unarchive:
+    src: "{{ file_yum_install_media }}"
+    dest: "{{ directory_yum_install_media }}"
+
+# 打包的时候，带上YUM的repo信息
+# 安装createrepo命令
+#- name: 安装createrepo命令
+#  shell: "rpm -ivh {{ directory_yum_install_media }}/rpm/deltarpm-3.6-3.el7.x86_64.rpm; rpm -ivh {{ directory_yum_install_media }}/rpm/python-deltarpm-3.6-3.el7.x86_64.rpm; rpm -ivh {{ directory_yum_install_media }}/rpm/libxml2-2.9.1-6.el7.5.x86_64.rpm; rpm -ivh {{ directory_yum_install_media }}/rpm/libxml2-2.9.1-6.el7.5.x86_64.rpm; rpm -ivh {{ directory_yum_install_media }}/rpm/createrepo-0.9.9-28.el7.noarch.rpm"
+
+# YUM createrepo
+#- name: YUM createrepo
+#  shell: "createrepo {{ directory_yum_install_media }}"
+
+# 为Linux添加YUM源 / 在线 / 文件的方式
+#- name: 为Linux添加YUM源
+#  copy:
+#    src: "{{ file_yum_repo }}"
+#    dest: "{{ directory_yum_repo_base }}"
+
+# 为Linux添加YUM源 / 离线 / 模版的方式
+- name: 为Linux添加YUM源
+  template:
+    backup: yes
+    src: "{{ template_yum_repo }}"
+    dest: "{{ path_yum_repo }}"
+    owner: root
+    group: root
+    mode: 0755
+
+# 刷新YUM缓存
+# -- 必须刷新，否则可能识别不到最新的YUM源
+- name: 刷新YUM缓存
+  shell: yum makecache
+
+# 使用YUM执行RPM的安装 / YUM 模块
+#- name: YUM / Install RPM
+#  yum:
+#    name: "{{ list_rpm_package }}"
+#    state: present
+
+# 通过发送YUM命令安装
+- name: YUM / Install RPM
+  shell: "yum install -y {{ item }}"
+  with_items:
+    - "{{ list_rpm_package }}"

@@ -1,0 +1,438 @@
+#!/bin/bash
+# =====================================
+# MySQL MHA / 扩展脚本 / MHA自动修复脚本
+# =====================================
+# --- 任务：
+# 1. 检查MHA的运行状态
+# 2. 当MHA的运行状态不正常的时候，尝试修复MHA
+# 2.1. 修复当前从库
+# 2.2. 将当前从库重新注册到当前主库
+# 2.3. 拉起MHA的masterha_manager进程
+# 3. 确保Keepalived的权重值是正确的
+# 3.1. 主库端权重250 / 从库端权重200
+# 3.2. 权重动态切换的时候，跨步数50
+
+# ##################
+# 变量
+# ##################
+
+# =====================================
+# Linux 相关
+# =====================================
+
+# MHA 操作系统管理用户
+# --- 本脚本以下所有的修复命令，都需要以这个用户权限去执行修复
+# --- 该用户需要具有的权限：
+# --- 1. SSH
+# --- 2. SUDO
+linux_mha_user="{{ mha_linux_user }}"
+
+# =====================================
+# MHA 相关
+# =====================================
+
+# --------------- 
+# 静态变量
+# ---------------
+
+# MHA 管理节点
+host_mha_manager="{{ mha_manager_host }}"
+
+# MHA 应用配置文件的名称
+str_mha_conf_app_name=$1
+
+# MHA 默认配置文件
+file_mha_conf_default="/etc/masterha_default.cnf"
+
+# MHA 应用配置文件
+file_mha_conf="{{ directory_mha_config }}/$str_mha_conf_app_name.cnf"
+
+# MHA 应用日志
+file_mha_log=`cat $file_mha_conf | grep manager_log | cut -d'=' -f2`
+
+# MHA masterha_manager 进程ID
+# v1
+# -- 命令
+#pid_mha_masterha_manager_os_command="ps -ef | grep 'masterha_manager' | grep '$str_mha_conf_app_name' | grep 'perl' | grep -v 'grep' | awk '{print \$2}'"
+# -- 显示
+#echo "MHA masterha_manager PID command【$pid_mha_masterha_manager_os_command】"
+# -- 执行
+#pid_mha_masterha_manager=`$pid_mha_masterha_manager_os_command`
+# v2
+pid_mha_masterha_manager=$(ps -ef | grep 'masterha_manager' | grep $str_mha_conf_app_name | grep 'perl' | grep -v 'grep' | awk '{print $2}')
+
+# --------------- 
+# 动态变量
+# ---------------
+
+# --------------- MHA
+# -- 运行时：旧主库端
+host_mysql_master_orig=`cat $file_mha_log | grep --color "MySQL Master failover" | cut -d'(' -f2 | cut -d':' -f1 | tail -n 1`
+
+# -- 运行时：新主库端
+host_mysql_master_new=`cat $file_mha_log | grep --color "MySQL Master failover" | cut -d'(' -f3 | cut -d':' -f1 | tail -n 1`
+
+# --------------- MySQL Master and Slave
+# -- Change Master / file
+#mysql_master_new_changemaster_file=""
+
+# -- Change Master / position
+#mysql_master_new_changemaster_pos=""
+
+# -- Change Master / Command
+mysql_master_new_changemaster_command=""
+
+# =====================================
+# 数据库 相关
+# =====================================
+
+# 数据库 MHA用户
+# --- 为了远程访问主库端数据库获取【Master Status】
+mysql_mha_user_name="{{ mysql_mha_user_name }}"
+mysql_mha_user_password="{{ mysql_mha_user_password }}"
+
+# 数据库 主从复制用户
+# --- 为了后续拼接Change Master语句
+mysql_repl_user_name="{{ mysql_replication_user_name }}"
+mysql_repl_user_password="{{ mysql_replication_user_password }}"
+
+# =====================================
+# Keepalived 相关
+# =====================================
+
+# 主节点的权重值
+priority_master=250
+
+# 从节点的权重值
+priority_slave=200
+
+# 跨步数 / 权重间隔值
+priority_interval=50
+
+# =====================================
+
+# ##################
+# 函数
+# ##################
+
+# =====================================
+# Linux 相关
+# =====================================
+
+# --- 通过SSH免密远程执行
+function do_linux_by_ssh() {
+    # 变量
+    func_str_ip="$1"
+    func_str_user="$2"
+    func_str_command="$3"
+    func_str_sudo="$4"
+
+    if [[ "$func_str_sudo" != "nosudo" ]]
+    then
+        func_str_command="sudo $func_str_command"
+    fi
+
+    # 执行
+    # -- 这里调用命令的时候，使用的是双引号
+    # -- 因此，后续传递命令的时候，只能用单引号
+    ssh -i /home/$func_str_user/.ssh/id_rsa -o ConnectTimeout=3 -T -t $func_str_user@$func_str_ip "$func_str_command"
+}
+
+# =====================================
+# 数据库 相关
+# =====================================
+
+# --- 通过IP地址与本脚本变量部分设置的用户名与口令
+# --- 远程执行对远端数据库的操作
+# --- 主要操作是：
+# --- 1. 查询主库端的【Master Status】
+function do_sql() {
+    # 变量
+    # -- 数据库相关信息
+    func_str_ip="$1"
+    func_str_sql="$2"
+    # -- 拼成的执行命令
+    os_command="mysql -u $mysql_mha_user_name -h"$func_str_ip" -p"$mysql_mha_user_password" -N -e \""$func_str_sql"\" -P3306"
+
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "$os_command"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+    # 执行
+    do_linux_by_ssh "$func_str_ip" "$linux_mha_user" "$os_command"
+}
+
+# --- 从MHA的日志中，获取重新建立主从关系的Change Master语句
+function get_mysql_changemaster_command() {
+    
+    # 在MHA Manager所在的服务器执行
+    # --- 当前脚本只会在Manager节点部署
+    # --- 因此，就是在本地执行
+    mysql_command_changemaster=`cat $file_mha_log | grep 'All other slaves should start' | tail -n 1 | awk -F'Statement should be: ' '{print $2}' | sed "s/MASTER_PASSWORD='xxx'/MASTER_PASSWORD='$mysql_repl_user_password'/g"`
+
+    # 显示
+    #echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    #echo "$mysql_command_changemaster"
+    #echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    
+    # 返回
+    # v1
+    #echo $mysql_command_changemaster
+    # v2
+    mysql_master_new_changemaster_command=$mysql_command_changemaster
+}
+
+# 处理旧主
+function mysql_do_orig() {
+
+    # 修复KeepAlived
+
+    # 刷新权重
+    keepalived_refresh_priority "stop-orig-keepalived"
+   
+    # 修复MySQL
+
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "修复MySQL从库端：$host_mysql_master_orig"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+    # 只需要传入命令即可，sudo的前缀，在【do_linux_by_ssh】中会自动添加
+
+    # -- 启动MySQL服务
+    do_linux_by_ssh "$host_mysql_master_orig" "$linux_mha_user" "service mysqld start"
+    
+    # -- 从库设为只读
+    do_sql "$host_mysql_master_orig" "set global read_only=1;"
+
+    # -- 启用半同步从库端参数
+    do_sql "$host_mysql_master_orig" "set global rpl_semi_sync_master_enabled=0;"
+    do_sql "$host_mysql_master_orig" "set global rpl_semi_sync_slave_enabled=1;"
+
+    # -- 获取Change Master语句
+    get_mysql_changemaster_command
+
+    # -- 注册为新主的从库
+    do_sql "$host_mysql_master_orig" "$mysql_master_new_changemaster_command"
+
+    # -- 启动从库的复制
+    do_sql "$host_mysql_master_orig" "start slave;"
+
+}
+
+# 处理新主
+function mysql_do_new() {
+
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "修复MySQL主库端：$host_mysql_master_new"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+    # -- 启用半同步从库端参数
+    # 半同步参数
+    do_sql "$host_mysql_master_new" "set global rpl_semi_sync_master_enabled=1;"
+    do_sql "$host_mysql_master_new" "set global rpl_semi_sync_slave_enabled=0;"
+
+}
+
+# =====================================
+# KeepAlived 相关
+# =====================================
+
+# --- 刷新KeepAlived的权重值
+function keepalived_refresh_priority() {
+
+    # 旧主 KeepAlived服务启停
+    # -- start-orig-keepalived
+    # -- stop-orig-keepalived
+    orig_keepalived_action=$1
+
+    # 该函数运行前，需要从MHA的日志中获取相关信息：
+    # 1. 旧的主库端 IP
+    # 2. 新的主库端 IP
+    # 在脚本执行的时候，应该会在前面的赋值部分获得这两个信息
+    # 但是，保险起见，先列举一下
+
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "旧主: $host_mysql_master_orig"
+    echo "新主: $host_mysql_master_new"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    
+    # 获取
+    # ---------------------- 旧主
+    # 获取当前的KEEPALIVED配置文件中的权重值
+    # -- 一定要用【tr】去掉变量的回车或者换行
+    os_command_orig_get_current_priority="cat /etc/keepalived/keepalived.conf | grep 'priority' | awk '{print \$2}' | tr -d '\n'"
+    result_orig_get_current_priority=`do_linux_by_ssh "$host_mysql_master_orig" "$linux_mha_user" "$os_command_orig_get_current_priority"`
+    #priority_number_orig=`echo $result_orig_get_current_priority | awk '{print $2}'`
+
+    # ---------------------- 新主
+    # 获取当前的KEEPALIVED配置文件中的权重值
+    # -- 一定要用【tr】去掉变量的回车或者换行
+    os_command_new_get_current_priority="cat /etc/keepalived/keepalived.conf | grep 'priority' | awk '{print \$2}' | tr -d '\n'"
+    result_new_get_current_priority=`do_linux_by_ssh "$host_mysql_master_new" "$linux_mha_user" "$os_command_new_get_current_priority"`
+    #priority_number_new=`echo $result_new_get_current_priority | awk '{print $2}'`
+
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "旧主/权重: ["$result_orig_get_current_priority"]"
+    echo "新主/权重: ["$result_new_get_current_priority"]"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+    # 替换 / 重刷权重
+    # ---------------------- 旧主
+    # 替换权重值 旧主 权重刷为从的权重
+    # v1
+    #os_command_orig_sed="sed -i '/priority/c\    priority "${priority_slave}"' /etc/keepalived/keepalived.conf"
+    # v2
+    os_command_orig_sed="sed -i '/priority/s/"$result_orig_get_current_priority"/"${priority_slave}"/g' /etc/keepalived/keepalived.conf"
+    echo "$os_command_orig_sed"
+
+    do_linux_by_ssh "$host_mysql_master_orig" "$linux_mha_user" "$os_command_orig_sed"
+
+    # ---------------------- 新主
+    # 替换权重值 新主 权重刷为主的权重
+    # v1
+    #os_command_new_sed="sed -i '/priority/c\    priority "${priority_master}"' /etc/keepalived/keepalived.conf"
+    # v2
+    os_command_new_sed="sed -i '/priority/s/"$result_new_get_current_priority"/"${priority_master}"/g' /etc/keepalived/keepalived.conf"
+    echo "$os_command_new_sed"
+    
+    do_linux_by_ssh "$host_mysql_master_new" "$linux_mha_user" "$os_command_new_sed"
+
+    # 刷完权重后，旧主的KeepAlived服务启停动作
+    # --- 在做旧主修复的时候，KeepAlived应该第一个被关掉，保证VIP可以切换到主库端
+    # --- 在MHA masterha_manager 活动的时候，刷新完权重后，旧主的KeepAlived应该拉起来，保证如果出现意外的时候，VIP可以漂移
+    if [[ "$orig_keepalived_action" == "start-orig-keepalived" ]]
+    then
+        # 显示
+        echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        echo "旧主：启动 KeepAlived"
+        echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        
+        # 执行
+        do_linux_by_ssh "$host_mysql_master_orig" "$linux_mha_user" "service keepalived start; service keepalived reload"
+    fi
+
+    if [[ "$orig_keepalived_action" == "stop-orig-keepalived" ]]
+    then
+        # 显示
+        echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        echo "旧主：停止 KeepAlived"
+        echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+        # 执行
+        do_linux_by_ssh "$host_mysql_master_orig" "$linux_mha_user" "service keepalived stop"
+    fi
+    
+}
+
+# =====================================
+# MySQL MHA 相关
+# =====================================
+
+# 启动MHA的管理进程 masterha_manager
+function mha_masterha_manager() {
+
+    # 命令
+    #os_command="nohup masterha_manager --conf=$file_mha_conf --ignore_last_failover > /tmp/mha_manager.log < /dev/null 2>&1 &"
+    #os_command="screen -S masterha_manager --conf=$file_mha_conf --ignore_last_failover"
+
+    # 显示
+    #echo "MHA masterha_manager command【$os_command】"
+
+    # 执行
+    # v1
+    #do_linux_by_ssh "$host_mha_manager" "$linux_mha_user" "$os_command" "nosudo"
+    # v2
+    #$($os_command)
+    # v3
+    #nohup masterha_manager --conf=$file_mha_conf --ignore_last_failover > /tmp/mha_manager.log < /dev/null 2>&1 &
+    # v4
+    nohup masterha_manager --conf=$file_mha_conf --ignore_last_failover &
+
+}
+
+# 检查MHA的管理进程 masterha_manager 是否启动了
+function mha_masterha_manager_check() {
+    # 显示
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "MHA / 修复脚本"
+    echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "-- Begin:: "`date "+|%Y-%m-%d|%H:%M:%S|"`
+
+    # 判断PID是否有值
+    # -- 如果有值，说明MHA管理进程正在运行
+    # -- 如果没有值，说明MHA管理进程已经宕了
+    if [[ "$pid_mha_masterha_manager" == "" ]]
+    then
+        echo "MHA管理进程[masterha_manager] / 停止"
+    else
+        echo "MHA管理进程[masterha_manager] / 活动"
+        echo "--- PID: [$pid_mha_masterha_manager]"
+
+        if [[ `tail -n 1 $file_mha_log | grep "Ping(SELECT) succeeded, waiting until MySQL doesn't respond"` != "" ]]
+        then
+
+            # 数据库
+
+            # 获取最新的主从状态
+
+            # -- 运行时：旧主库端
+            host_mysql_master_orig=`cat $file_mha_log | grep --color "MySQL Master failover" | cut -d'(' -f2 | cut -d':' -f1 | tail -n 1`
+
+            # -- 运行时：新主库端
+            host_mysql_master_new=`cat $file_mha_log | grep --color "MySQL Master failover" | cut -d'(' -f3 | cut -d':' -f1 | tail -n 1`
+
+            echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+            echo "MySQL MHA / 主从状态"
+            echo "---------------------"
+            echo "-- Data Time:: "`date "+|%Y-%m-%d|%H:%M:%S|"`
+            echo "主库：【$host_mysql_master_new】"
+            echo "从库：【$host_mysql_master_orig】"
+            echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+            # KeepAlived
+
+            # 按照最新的主从状态，刷新权重
+            keepalived_refresh_priority "start-orig-keepalived"
+
+        fi
+
+        # 退出脚本
+        echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+        echo "-- Finished:: "`date "+|%Y-%m-%d|%H:%M:%S|"`
+
+        # -- 退出
+        exit 0
+
+    fi    
+
+}
+
+# ##################
+# 处理
+# ##################
+
+# 1. 检查MHA的管理进程是否运行
+mha_masterha_manager_check
+
+# 2. 修复旧主
+mysql_do_orig
+
+# 3. 修复新主
+mysql_do_new
+
+# 4. 启动MHA管理进程
+mha_masterha_manager
+
+# ##################
+# 结束
+# ##################
+# 退出脚本
+echo -e "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+echo "-- Finished:: "`date "+|%Y-%m-%d|%H:%M:%S|"`
+
+# Finished.

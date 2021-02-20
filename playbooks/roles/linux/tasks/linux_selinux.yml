@@ -1,0 +1,26 @@
+# 禁用SELinux
+- name: 禁用SELinux
+  lineinfile:
+    dest: /etc/selinux/config
+    backrefs: no
+    regexp: 'SELINUX='
+    line: 'SELINUX=disabled'
+
+# 切换SELinux为宽容模式
+# 0 permissive
+# 1 enforcing
+# -----
+# Linux 会在安装的时候，默认启用SELinux为：强制模式
+- name: 切换SELinux为：宽容模式
+  shell: setenforce 0
+  ignore_errors: yes
+
+# 查看当前SELinux的状态
+- name: SELinux状态
+  shell: sestatus
+  register: linux_selinux_status
+
+# 显示当前SELinux的状态
+- name: 输出SELinux的状态
+  debug:
+    msg: "{{ linux_selinux_status['stdout'] }}"

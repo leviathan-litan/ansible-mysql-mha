@@ -1,0 +1,17 @@
+# 将SQL文件拷贝到目标服务器上
+- name: 将SQL文件拷贝到目标服务器上
+  copy:
+    backup: yes
+    src: "{{ file_sql_init }}"
+    dest: "{{ path_file_sql_init }}"
+    owner: mysql
+    group: mysql
+    mode: 0755
+  
+# 执行SQL文件
+# -- 需要在主库上执行
+- name: 执行SQL文件
+  # -f, 忽略导入过程中的错误
+  shell: mysql -u root -p'{{ mysql_database_user_root_password }}' -f < {{ path_file_sql_init }}
+  ignore_errors: yes
+  when: db_role == "master"

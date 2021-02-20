@@ -1,0 +1,44 @@
+# 部署 MySQL MHA
+# --- 从零开始
+
+# 执行完成后：
+# 1. 最好手动执行【ssh xxx date】，让系统生成known_hosts文件，最好每个节点都生成到所有节点的known_hosts记录
+
+# 任务：
+# 1. Linux环境的基本的通用配置
+- name: Linux
+  hosts: 
+    - all
+  roles:
+  - { role: linux }
+
+# 任务：
+# 1. 安装Keepalived
+# 2. 部署配置文件
+# 3. 启动Keepalived服务，并拉起VIP资源
+- name: KeepAlived
+  hosts: 
+    - keepalived
+  roles:
+  - { role: keepalived }
+
+# 任务：
+# 1. 安装MySQL
+# 2. 配置MySQL的主从架构
+# 3. 在主节点上运行SQL脚本
+- name: MySQL
+  hosts: 
+    - mysql
+  roles:
+  - { role: mysql }
+
+# 任务：
+# 1. 安装MySQL MHA
+# 2. 部署MHA配置文件
+# 3. 部署MHA二次开发脚本
+# 4. 启动MySQL MHA
+- name: MySQL MHA
+  hosts: 
+    - mysql_mha
+  roles:
+  - { role: mysql_mha }

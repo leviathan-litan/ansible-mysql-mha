@@ -1,0 +1,50 @@
+# =====================================
+# MySQL MHA / 应用配置文件 / 1
+# =====================================
+
+# =====================================
+[server default]
+
+# MHA 默认配置
+
+# -- Manager 工作路径
+#manager_workdir={{ directory_mha_manager_workdir }}
+
+# -- 远端工作路径
+#remote_workdir={{ directory_mha_remote_workdir }}
+
+# 日志文件
+manager_log={{ path_mha_manager_log }}
+
+# =====================================
+[server1]
+# 连接信息
+hostname={{ mysql_replication['server1']['host'] }}
+port={{ mysql_replication['server1']['port'] }}
+
+# 主库端的BINLOG位置
+master_binlog_dir={{ directory_master_binlog }}
+
+# 是否为备主
+candidate_master=1
+
+# 其他参数
+# check_repl_delay=0
+
+# =====================================
+[server2]
+# 连接信息
+hostname={{ mysql_replication['server2']['host'] }}
+port={{ mysql_replication['server2']['port'] }}
+
+# 主库端的BINLOG位置
+master_binlog_dir={{ directory_master_binlog }}
+
+# 是否为备主
+candidate_master=1
+
+# 其他参数
+# check_repl_delay=0
+
+# =====================================
+# Finished.

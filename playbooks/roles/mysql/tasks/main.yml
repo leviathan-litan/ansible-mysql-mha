@@ -1,0 +1,21 @@
+# 系统账户管理 / 创建用户与用户组
+- import_tasks: mysql_os_user_group.yml
+
+# 目标服务器 目录相关操作
+- import_tasks: mysql_directory.yml
+
+# 配置YUM，并根据变量文件中的定义，执行RPM包安装
+- import_tasks: mysql_yum.yml
+
+# 配置MySQL的root口令
+- import_tasks: mysql_database_user_password.yml
+
+# 配置MySQL主从
+- import_tasks: mysql_replication.yml
+
+# 配置MySQL半同步
+- import_tasks: mysql_semisync.yml
+  when: mysql_semisync_enabled == 1
+
+# 执行初始化SQL
+#- import_tasks: mysql_execute_sql.yml

@@ -1,0 +1,71 @@
+# 将MySQL的安装介质解压到目标服务器的目标路径
+- name: 解压安装介质
+  unarchive:
+    src: "{{ file_mysql_install_media }}"
+    dest: "{{ directory_mysql_install_media_unzip }}"
+    owner: mysql
+    group: mysql
+    mode: 0755
+
+# 将Percona Toolkit拷贝到目标服务器的目标路径
+- name: Percona Toolkit 拷贝到目标路径
+  copy: 
+    src: "{{ file_percona_toolkit_install_media }}"
+    dest: "{{ directory_mysql_install_media_unzip }}"
+    owner: mysql
+    group: mysql
+    mode: 0755
+
+# 创建YUM本地源
+- name: 创建MySQL本地YUM源
+  shell: "createrepo {{ directory_mysql_install_media_unzip }}"
+
+# 为Linux添加YUM源
+- name: 将MySQL本地源注册到Linux系统
+  template:
+    backup: yes
+    src: "{{ template_yum_mysql_repo }}"
+    dest: "{{ file_yum_mysql_repo }}"
+    owner: root
+    group: root
+    mode: 0755
+
+# 刷新YUM缓存
+- name: 刷新YUM缓存
+  shell: yum makecache
+
+# 使用YUM执行RPM的安装
+#- name: YUM / Install RPM
+#  yum:
+#    name: "{{ list_rpm_package }}"
+#    state: present
+
+# 通过发送YUM命令安装
+- name: YUM / Install RPM
+  shell: "yum install -y {{ item }}"
+  with_items:
+    - "{{ list_rpm_package }}"
+
+# 将MySQL的参数文件拷贝到目标服务器的目标路径
+- name: MySQL参数文件
+  template:
+    backup: yes
+    src: "{{ template_mysql_my_cfg }}"
+    dest: "{{ path_mysql_my_cfg }}"
+    owner: mysql
+    group: mysql
+    mode: 0755
+
+# 宣告MySQL软件安装成功
+#- name: "MySQL软件安装成功"
+#  debug:
+#    msg: "启动MySQL服务"
+#  notify: 
+#    - mysqld start
+
+# 启动MySQL服务
+- name: 启动MySQL服务
+  service:
+    name: mysqld
+    state: started
+    enabled: yes

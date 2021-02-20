@@ -1,0 +1,13 @@
+# 部署 MySQL MHA
+# --- 从已经有了MySQL主从架构开始
+
+# 任务：
+# 1. 安装MySQL MHA
+# 2. 部署MHA配置文件
+# 3. 部署MHA二次开发脚本
+# 4. 启动MySQL MHA
+- name: MySQL MHA
+  hosts: 
+    - mysql_mha
+  roles:
+  - { role: mysql_mha }

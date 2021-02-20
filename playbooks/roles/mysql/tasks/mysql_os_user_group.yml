@@ -1,0 +1,42 @@
+# 创建Linux系统组
+- name: 创建Linux系统组
+  group:
+    # 用户组名称
+    name: "{{ item['group_name'] }}"
+    # 用户组ID
+    gid: "{{ item['gid'] }}"
+    state: present
+  with_items:
+    - "{{ list_linux_group }}"
+
+# 创建Linux系统用户
+- name: 创建Linux系统用户
+  user:
+    # 用户名
+    name: "{{ item['username'] }}"
+    # 用户ID
+    uid: "{{ item['uid'] }}"
+    # 用户组
+    group: "{{ item['group'] }}"
+    # 用户附加组
+    groups: "{{ item['groups'] }}"
+    append: yes
+    # 用户口令
+    password: "{{ item['password'] | password_hash('sha512') }}"
+    # 是否创建家目录
+    create_home: yes
+    # 家目录在哪里
+    home: "{{ item['dir_home'] }}"
+    # 是否生成SSH密钥 / 可以用于SSH免密
+    #generate_ssh_key: yes
+    # SSH密钥长度
+    #ssh_key_bits: 2048
+    # SSH密钥文件存放在哪里
+    #ssh_key_file: .ssh/id_rsa
+    # 用户的默认SHELL程序
+    shell: "{{ item['shell'] }}"
+    # 用户注释
+    comment: "{{ item['comment'] }}"
+  # 从变量文件中获取可以迭代的创建用户数组
+  with_items:
+    - "{{ list_linux_user }}"

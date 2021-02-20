@@ -1,0 +1,69 @@
+# 配置文件：/etc/masterha_default.cnf
+# --- 需要正确赋权
+- name: 文件：/etc/masterha_default.cnf
+  template:
+    backup: yes
+    src: "{{ template_cnf_masterha_default }}"
+    dest: "{{ path_cnf_masterha_default }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+# 配置文件：app_1.cnf
+# --- 有可能同一个MHA管理节点上会部署多次
+# --- 需要正确赋权
+- name: 文件：app_xxx.cnf
+  template:
+    backup: yes
+    src: "{{ template_cnf_app }}"
+    dest: "{{ path_cnf_app }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  when: mha_role == "mha_manager"
+
+# 到这一步，已经可以通过配置文件中指定的SSH用户执行：
+#   masterha_check_ssh
+# 并成功了
+
+# 将 MHA 自己的脚本上传 MHA脚本目录
+- name: 上传 MHA 自身脚本
+  copy:
+    backup: yes
+    force: yes
+    src: "{{ item }}"
+    dest: "{{ directory_mha_script }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  with_items:
+    - "{{ list_mha_script }}"
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+# 将 MHA 扩展脚本上传 MHA脚本目录
+- name: 上传 MHA 扩展脚本
+  template:
+    backup: yes
+    src: "{{ item['template'] }}"
+    dest: "{{ item['path'] }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+  with_items:
+    - "{{ list_template_mha_script }}"
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+# 将MHA的HealthCheck.pm替换成我们扩展后的脚本
+#- name: 文件：HealthCheck.pm
+#  template:
+#    backup: yes
+#    src: "{{ template_mha_extension_script_HealthCheck }}"
+#    dest: "{{ path_mha_extension_script_HealthCheck }}"
+
+# 到这一步，应该所有的MHA的配置 与 MHA扩展脚本的配置都完成了
+
+# 如果手动启动MHA：
+# nohup masterha_manager --conf=/etc/mha/app_1.cnf --ignore_last_failover &
+
+# 自动启动MHA在下一个TASK脚本中实现

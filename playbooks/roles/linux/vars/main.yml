@@ -1,0 +1,130 @@
+# ====================================
+# 模板 / template
+
+# 离线YUM的REPO文件
+template_yum_repo: "yum/centos_7_offline.repo.j2"
+
+# 文件：/etc/hosts
+template_linux_hosts: "etc/hosts.j2"
+
+# ====================================
+# 文件 / file
+# -- 指在Ansible服务端的文件
+
+# YUM 仓库源文件
+file_yum_repo: "yum/centos_7.repo"
+
+# 离线RPM包压缩文件
+# -- 该压缩文件中包含已经做好了createrepo的repodata目录
+# 该文件内容较大，用百度云分享
+# 链接：https://pan.baidu.com/s/1eYmnPbePk0TC1ed8RyK1Jw 
+# 提取码：godz 
+file_yum_install_media: "yum/rpm.tar.gz"
+
+# 文件 /etc/hosts
+file_linux_hosts: "etc/hosts"
+
+# ====================================
+# 路径 / path
+# -- 指要发送到远端服务器的文件的绝对路径
+
+# YUM 配置文件
+path_yum_conf: "/etc/yum.conf"
+
+# 文件 /etc/hosts
+path_linux_hosts: "/etc/hosts"
+
+# 离线RPM的YUM源文件
+path_yum_repo: "{{ directory_yum_repo_base }}/centos_7_offline.repo"
+
+# ====================================
+# 文件夹 / directory
+# -- 指要在远端服务器上创建或存在的文件夹路径
+
+# YUM 仓库源文件 目录
+directory_yum_repo_base: "/etc/yum.repos.d"
+
+# 上传软件目录
+directory_software_upload: "/software_upload"
+
+# 备份目录
+directory_backup: "/backup"
+
+# 数据目录
+# -- 默认的数据目录
+# -- 因此，在运行Ansible之前，如果需要挂载额外的数据盘，需要提前操作
+# -- 命令样例：
+# -- mount /dev/sdc /data
+directory_data: "/data1"
+
+# 脚本目录
+directory_script: "/script"
+
+# 光盘镜像挂载目录
+#directory_mount_point_iso: "/iso"
+
+# 离线RPM上传路径
+directory_yum_install_media: "{{ directory_software_upload }}/yum"
+
+# 整体调用
+list_directory:
+  - "{{ directory_software_upload }}"
+  - "{{ directory_backup }}"
+  - "{{ directory_data }}"
+  - "{{ directory_script }}"
+  #- "{{ directory_mount_point_iso }}"
+  - "{{ directory_yum_install_media }}"
+
+# ====================================
+# 主机信息
+# --- 需要根据环境信息修改的部分
+
+host_info:
+  mysql:
+    server1:
+      hostname: "mysql1"
+      ip: "192.168.232.11"
+    server2:
+      hostname: "mysql2"
+      ip: "192.168.232.12"
+  mha:
+    manager:
+      hostname: "mysql3"
+      ip: "192.168.232.13"
+
+# ====================================
+# 其他变量
+
+# YUM 要安装的RPM软件包
+# -- 最好按照字母顺序写
+# -- 或者按照关联度依次排列
+list_rpm_package: 
+  # ------------
+  # 创建本地的YUM源
+  - createrepo
+  # ------------
+  # 自动化处理交互命令
+  - expect
+  - expect-devel
+  # ------------
+  - gcc
+  - gcc-c++
+  - glibc
+  - git
+  - java-latest-openjdk
+  - kernel-devel*
+  - lrzsz
+  - libnl
+  - libnl-devel
+  - libnfnetlink-devel
+  - make
+  # ------------
+  # Ansible的MySQL相关模块访问MySQL，需要安装这个RPM包
+  - MySQL-python
+  # ------------
+  - openssl-devel
+  - openssh-clients
+  - popt
+  - popt-devel
+  - tree
+  - wget

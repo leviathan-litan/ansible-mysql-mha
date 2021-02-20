@@ -1,0 +1,50 @@
+# =====================================
+# MySQL MHA / 全局默认配置文件
+# =====================================
+
+[server default]
+
+# MHA 默认配置
+
+# -- 【ping】检查
+ping_interval=1
+ping_type=select
+
+# -- Manager 工作路径
+manager_workdir={{ directory_mha_manager_workdir }}
+
+# -- 远端工作路径
+remote_workdir={{ directory_mha_remote_workdir }}
+
+# 操作系统用户 / MHA管理用户 / SSH免密用户
+ssh_user={{ mha_linux_user }}
+
+# 数据库用户 / MHA管理用户
+user={{ mysql_mha_user_name }}
+password={{ mysql_mha_user_password }}
+
+# 数据库用户 / MySQL主从复制用户
+repl_user={{ mysql_replication_user_name }}
+repl_password={{ mysql_replication_user_password }}
+
+# MySQL主库端 BINLOG 路径
+#master_binlog_dir={{ directory_master_binlog }}
+
+# MHA脚本
+# -- 故障切换脚本
+master_ip_failover_script={{ path_mha_script_master_ip_failover }}
+
+# -- 在线迁移脚本
+master_ip_online_change_script={{ path_mha_script_master_ip_online_change }}
+
+# -- 通知脚本
+#report_script="xxxxx/send_report"
+
+# -- 关停脚本
+#shutdown_script=""
+
+# 其他脚本
+#secondary_check_script="/usr/local/bin/masterha_secondary_check -s 10.0.20.201 -s 10.0.20.202 -s 10.0.20.203 -s 10.0.20.204"
+
+# =====================================
+# Finished.

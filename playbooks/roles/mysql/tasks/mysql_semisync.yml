@@ -1,0 +1,99 @@
+# ##########################################
+# 主库
+# 主库端安装半同步模块
+- name: 主库安装半同步模块 / semisync_slave.so
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_slave.so';\""
+  ignore_errors: yes
+  when: db_role == "master"
+
+- name: 主库安装半同步模块 / semisync_master.so
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
+  ignore_errors: yes
+  when: db_role == "master"
+
+# 主库启动半同步
+- name: 主库开启半同步 / 1
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"set global rpl_semi_sync_master_enabled=1;\""
+  ignore_errors: yes
+  when: db_role == "master"
+
+- name: 主库开启半同步 / 2
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"set global rpl_semi_sync_slave_enabled=0;\""
+  ignore_errors: yes
+  when: db_role == "master"
+
+- name: 主库开启半同步 / 3
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"set global rpl_semi_sync_master_timeout={{ mysql_param_rpl_semi_sync_master_timeout }};\""
+  ignore_errors: yes
+  when: db_role == "master"
+
+# 修改数据库参数文件
+# -- 尽量不要动态修改MySQL的参数文件
+- name: 主库 修改参数文件 / 1
+  lineinfile:
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: 'loose_rpl_semi_sync_master_enabled'
+    line: 'loose_rpl_semi_sync_master_enabled = 1'
+  when: db_role == "master"
+
+- name: 主库 修改参数文件 / 2
+  lineinfile:
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: 'loose_rpl_semi_sync_slave_enabled'
+    line: 'loose_rpl_semi_sync_slave_enabled = 0'
+  when: db_role == "master"
+
+# ##########################################
+# 从库
+# 从库端安装半同步模块
+- name: 从库安装半同步模块 / semisync_slave.so
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_slave.so';\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+- name: 从库安装半同步模块 / semisync_master.so
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+# 从库启动半同步
+- name: 从库开启半同步 / 1
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"set global rpl_semi_sync_slave_enabled=1;\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+- name: 从库开启半同步 / 2
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"set global rpl_semi_sync_master_enabled=0;\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+# 从库停止IO_THREAD
+- name: 从库停止IO_THREAD
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"stop slave io_thread;\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+# 从库启动IO_THREAD
+- name: 从库启动IO_THREAD
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"start slave io_thread\""
+  ignore_errors: yes
+  when: db_role == "slave"
+
+# 修改数据库参数文件
+- name: 从库 修改参数文件 / 1
+  lineinfile:
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: 'loose_rpl_semi_sync_master_enabled'
+    line: 'loose_rpl_semi_sync_master_enabled = 0'
+  when: db_role == "slave"
+
+- name: 从库 修改参数文件 / 2
+  lineinfile:
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: 'loose_rpl_semi_sync_slave_enabled'
+    line: 'loose_rpl_semi_sync_slave_enabled = 1'
+  when: db_role == "slave"

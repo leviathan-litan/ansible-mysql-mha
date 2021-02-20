@@ -1,0 +1,60 @@
+#!/usr/bin/bash
+# =====================================
+# Linux / 扩展脚本 / 自动生成SSH免密用户的【.ssh/known_hosts】
+# =====================================
+# --- 用于生成本地的known_hosts文件
+
+# 注意：
+# 1. 该脚本的成功执行依赖于工具expect
+# 2. 如果没有该命令，可以通过以下命令安装：
+# 2.1. Command: yum install -y expect
+
+# 变量
+
+# 主机信息
+# -- 通过传参的方式获得主机名
+#host=$1
+
+# -- 主机信息列表
+# |- 填写主机名或者IP都可以
+# |- 多个地址以空格分隔
+# 例如：
+#list_hosts="mysql1 mysql2 mysql3"
+
+# Ansible 模板自动渲染
+list_hosts="{{ mysql_replication['server1']['host'] }} {{ mysql_replication['server2']['host'] }} {{ mha_manager_host }} {{ mysql_replication['server1']['hostname'] }} {{ mysql_replication['server2']['hostname'] }} {{ mha_manager_hostname }}"
+
+# 函数
+
+function gen_known_hosts_record_by_host() {
+
+    # 当前主机
+    host_current=$1
+
+    # 设置expect会话捕捉超时时间
+    set timeout 10 
+
+    # 使用expect解释器
+    /usr/bin/expect <<EOF
+
+    spawn ssh $host_current date
+    expect {
+        "connecting (yes/no)" {send "yes\r"}
+    }
+    # 结束expect会话
+    expect eof
+EOF
+}
+
+# 执行
+for host_item in $list_hosts
+do
+    # 显示
+    echo "------------------ Host:[$host_item]"
+
+    # 执行
+    gen_known_hosts_record_by_host "$host_item"
+
+done
+
+# 结束

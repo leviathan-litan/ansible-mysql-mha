@@ -1,0 +1,17 @@
+# MySQL MHA / 操作系统层用户 免密
+- import_tasks: mha_os_user_password.yml
+
+# 创建目录
+- import_tasks: mha_directory.yml
+
+# 安装MySQL MHA
+- import_tasks: mha_install.yml
+
+# 配置MySQL MHA
+- import_tasks: mha_config.yml
+
+# MySQL MHA服务管理
+# 任务：
+# 1. 启动MHA
+# 2. 加入开机启动
+- import_tasks: mha_service.yml

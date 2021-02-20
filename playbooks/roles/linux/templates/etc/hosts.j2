@@ -1,0 +1,30 @@
+
+# =====================================
+# Linux 文件：/etc/hosts
+# =====================================
+
+# Default
+#127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+#::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+# Local
+# -- IPV4
+127.0.0.1        localhost
+# -- IPV6
+::1              localhost
+
+# Public
+# -- 在执行Ansible Playbook之前，需要预编辑
+# -- 注意，主机名与IP，要和目标环境的配置一致
+
+# MySQL
+# -- MHA Node
+{{ host_info.mysql.server1.ip }}   {{ host_info.mysql.server1.hostname }}
+{{ host_info.mysql.server2.ip }}   {{ host_info.mysql.server2.hostname }}
+
+# MySQL MHA
+# -- MHA Manager
+{{ host_info.mha.manager.ip }}   {{ host_info.mha.manager.hostname }}
+
+# =====================================
+# Finished

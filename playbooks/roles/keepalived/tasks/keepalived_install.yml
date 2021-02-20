@@ -1,0 +1,60 @@
+# 将KeepAlived的安装介质解压到目标服务器的目标路径
+- name: 解压安装介质
+  unarchive:
+    src: "{{ file_keepalived_install_media }}"
+    dest: "{{ directory_software_upload }}"
+    owner: "root"
+    group: root
+    mode: 0755
+
+- name: 源码包安装：configure
+  shell: cd {{ directory_keepalived_install_media_unzip }} && ./configure --prefix={{ directory_keepalived_base }} > {{ path_keepalived_install_log_configure }}
+
+- name: 源码包安装：make
+  shell: cd {{ directory_keepalived_install_media_unzip }} && make > {{ path_keepalived_install_log_make }}
+
+- name: 源码包安装：make install
+  shell: cd {{ directory_keepalived_install_media_unzip }} && make install > {{ path_keepalived_install_log_make_install }}
+
+# 移动：KeepAlived启动脚本变量文件到系统目录下
+- name: KeepAlived 启动脚本变量文件
+  shell: "cp {{ path_keepalived_systemctl_variable_sample }} {{ path_keepalived_systemctl_variable }}"
+
+# 将KeepAlived的主程序移动到系统目录下
+- name: KeepAlived 主程序
+  shell: "ln -s {{ path_keepalived_sbin_sample }} {{ path_keepalived_sbin }}"
+  ignore_errors: yes
+
+# 将KeepAlived配置文件拷贝到目标系统的目标路径
+# -- 这个配置文件的权限必须是【644】，否则启动失败
+- name: KeepAlived 配置文件
+  template:
+    backup: yes
+    src: "{{ template_keepalived_config }}"
+    dest: "{{ path_keepalived_config }}"
+    owner: "root"
+    group: root
+    mode: 0664
+
+# 完成了上面的步骤，就应该配置好了KeepAlived
+
+# 启动KeepAlived服务
+- name: 启动 KeepAlived 服务
+  service:
+    name: keepalived
+    state: started
+    #enabled: yes
+
+# 启动后，获取 当前IP资源的情况
+# --- 睡四秒钟后获取
+- name: 获取KeepAlived启动后的IP资源情况
+  #shell: "ip a | grep 'inet ' | grep -v '127.0.0.1' | grep '{{ keepalived_virtual_ip }}' | awk '{ print $2 }'"
+  shell: "sleep 4 && ip a | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}'"
+  register: ip_status_after_keepalived_started
+
+# 输出，当前IP资源的状态
+- name: 启动KeepAlived后的IP资源状态
+  # stdout_lines, 会分行显示
+  # stdout, 换行部分会替换为【/n】
+  debug:
+    msg: "{{ ip_status_after_keepalived_started['stdout_lines'] }}"
