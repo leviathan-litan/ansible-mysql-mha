@@ -63,6 +63,15 @@
     line: 'loose_rpl_semi_sync_slave_enabled = 0'
   when: db_role == "master"
 
+- name: 主库 修改参数文件 / 3
+  lineinfile:
+    backup: yes
+    dest: "{{ path_mysql_my_cfg }}"
+    backrefs: no
+    regexp: 'loose_rpl_semi_sync_master_timeout'
+    line: 'loose_rpl_semi_sync_master_timeout = {{ mysql_param_rpl_semi_sync_master_timeout }}'
+  when: db_role == "master"
+
 # ##########################################
 # 从库
 # 从库端安装半同步模块
