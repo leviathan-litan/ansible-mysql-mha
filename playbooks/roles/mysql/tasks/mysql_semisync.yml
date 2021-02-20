@@ -1,28 +1,26 @@
 # ##########################################
 # 打开配置文件中的插件参数
 - name: 半同步：打开参数文件中的插件参数 / 1
-  lineinfile:
+  replace:
     backup: yes
-    dest: "{{ path_mysql_my_cfg }}"
-    backrefs: no
+    path: "{{ path_mysql_my_cfg }}"
     regexp: "#plugin_dir"
-    replace: "^plugin_dir"
+    replace: "plugin_dir"
 
 - name: 半同步：打开参数文件中的插件参数 / 2
-  lineinfile:
+  replace:
     backup: yes
     dest: "{{ path_mysql_my_cfg }}"
-    backrefs: no
     regexp: "#plugin_load"
-    replace: "^plugin_load"
+    replace: "plugin_load"
 
 # ##########################################
 # 主库
 # 主库端安装半同步模块
-- name: 主库安装半同步模块 / semisync_slave.so
-  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_slave.so';\""
-  ignore_errors: yes
-  when: db_role == "master"
+#- name: 主库安装半同步模块 / semisync_slave.so
+#  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_slave.so';\""
+#  ignore_errors: yes
+#  when: db_role == "master"
 
 - name: 主库安装半同步模块 / semisync_master.so
   shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
@@ -73,10 +71,10 @@
   ignore_errors: yes
   when: db_role == "slave"
 
-- name: 从库安装半同步模块 / semisync_master.so
-  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
-  ignore_errors: yes
-  when: db_role == "slave"
+#- name: 从库安装半同步模块 / semisync_master.so
+#  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
+#  ignore_errors: yes
+#  when: db_role == "slave"
 
 # 从库启动半同步
 - name: 从库开启半同步 / 1

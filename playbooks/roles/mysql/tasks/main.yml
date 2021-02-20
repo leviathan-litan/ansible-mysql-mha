@@ -15,7 +15,7 @@
 
 # 配置MySQL半同步
 - import_tasks: mysql_semisync.yml
-  when: mysql_semisync_enabled == 1
+  when: mysql_semisync_enabled == "1"
 
 # 执行初始化SQL
 - import_tasks: mysql_execute_sql.yml

@@ -74,7 +74,7 @@ list_directory:
 keepalived_virtual_router_id: 52
 
 # VIP 资源
-keepalived_virtual_ip: "192.168.232.14"
+keepalived_virtual_ip: "192.168.232.10"
 
 # KeepAlived VIP 绑定到哪块网卡上
 keepalived_nic_name: "ens32"

@@ -110,7 +110,7 @@ list_directory:
 # 数据库使用什么方式安装
 # 0 异步
 # 1 半同步
-mysql_semisync_enabled: "0"
+mysql_semisync_enabled: "1"
 
 # MySQL 端口
 # -- 默认的端口配置

@@ -9,7 +9,8 @@
 # --- 值需要在MHA管理节点执行
 - name: 将MHA管理进程的启动加入CRONTAB
   cron:
-    name: "MySQL MHA / Manager Process / masterha_manager / Startup"
+    # 不同的crontab作业的名字需要不一样，否则会被覆盖
+    name: "MySQL MHA / startup masterha_manager: {{ mha_conf_app_name }}"
     # 调用：call_do_mha.sh
     #job: "nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &"
     # 调用：do_mha.sh
