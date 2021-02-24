@@ -1,0 +1,7 @@
+# 部署 Linux
+
+- name: Linux
+  hosts: 
+    - all
+  roles:
+  - { role: linux }

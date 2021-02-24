@@ -1,44 +1,51 @@
 # 启动MHA管理进程 / 直接执行的方式
-# --- 只需要在MHA管理节点执行
-# --- 要以MHA的操作系统用户启动
-#- name: 启动MHA管理进程 masterha_manager
-#  shell: "su - {{ mha_linux_user }} -c \"nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &\""
-#  when: mha_role == "mha_manager"
+
+# ################################################################################
+# 方式：一
 
 # 启动MHA管理进程 / CRONTAB的方式
 # --- 值需要在MHA管理节点执行
-- name: 将MHA管理进程的启动加入CRONTAB
-  cron:
-    # 不同的crontab作业的名字需要不一样，否则会被覆盖
-    name: "MySQL MHA / startup masterha_manager: {{ mha_conf_app_name }}"
-    # 调用：call_do_mha.sh
-    #job: "nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &"
-    # 调用：do_mha.sh
-    # -- 每一秒执行一次
-    job: "sleep 1; sh {{ path_mha_extension_script_do_mha }} {{ mha_conf_app_name }}"
-    # CRONTAB 挂到 MHA的操作系统管理用户
-    user: "{{ mha_linux_user }}"
-    # 分
-    # -- 每一分钟执行一次
-    #minute: "*/1"
-    # 时
-    #hour: ""
-    # 日
-    #day: ""
-    # 月
-    #mounth: ""
-    # 周
-    #weekday: ""
-    # 是否备份
-    backup: yes
-    state: present
+# - name: 将MHA管理进程的启动加入CRONTAB
+#   cron:
+#     # 不同的crontab作业的名字需要不一样，否则会被覆盖
+#     name: "MySQL MHA / startup masterha_manager: {{ mha_conf_app_name }}"
+#     # 调用：call_do_mha.sh
+#     #job: "nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &"
+#     # 调用：do_mha.sh
+#     # -- 每一秒执行一次
+#     job: "sleep 1; sh {{ path_mha_extension_script_do_mha }} {{ mha_conf_app_name }}"
+#     # CRONTAB 挂到 MHA的操作系统管理用户
+#     user: "{{ mha_linux_user }}"
+#     # 分
+#     # -- 每一分钟执行一次
+#     #minute: "*/1"
+#     # 时
+#     #hour: ""
+#     # 日
+#     #day: ""
+#     # 月
+#     #mounth: ""
+#     # 周
+#     #weekday: ""
+#     # 是否备份
+#     backup: yes
+#     state: present
+#   when: mha_role == "mha_manager"
+
+# ################################################################################
+# 方式：二
+
+# --- 只需要在MHA管理节点执行
+# --- 要以MHA的操作系统用户启动
+- name: 启动MHA管理进程 masterha_manager
+  shell: "su - {{ mha_linux_user }} -c \"nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &\""
   when: mha_role == "mha_manager"
 
 # 将MHA启动加入开机脚本
 # -- 如果挂载了CRONTAB，则不需要这样了
-#- name: 将MHA管理进程启动命令 加入开机脚本
-#  shell: "echo 'su - {{ mha_linux_user }} -c \"nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &\"' >> /etc/rc.local"
-#  when: mha_role == "mha_manager"
+- name: 将MHA管理进程启动命令 加入开机脚本
+  shell: "echo 'su - {{ mha_linux_user }} -c \"nohup {{ path_mha_extension_script_call_do_mha }} {{ mha_conf_app_name }} &\"' >> /etc/rc.local"
+  when: mha_role == "mha_manager"
 
 # 配置开机脚本的权限
 # --- 否则，开机脚本可能无法执行

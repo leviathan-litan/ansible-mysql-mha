@@ -19,50 +19,15 @@ template_mha_extension_script_do_mha: "mha_extension_script/do_mha.sh.j2"
 # 这个脚本要上传到特定目录
 template_mha_extension_script_HealthCheck: "mha_extension_script/HealthCheck.pm.j2"
 
-# SSH用户自动创建Known_hosts
-template_after_ssh_nopasswd: "mha_extension_script/after_ssh_nopasswd.sh.j2"
-
-# -- 统一调度
-list_template_mha_script:
-  - template: "{{ template_mha_script_master_ip_failover }}"
-    path: "{{ path_mha_script_master_ip_failover }}"
-  - template: "{{ template_mha_extension_script_call_do_mha }}"
-    path: "{{ path_mha_extension_script_call_do_mha }}"
-  - template: "{{ template_mha_extension_script_do_mha }}"
-    path: "{{ path_mha_extension_script_do_mha }}"
-  - template: "{{ template_mha_extension_script_HealthCheck }}"
-    path: "{{ path_mha_extension_script_HealthCheck }}"
-  #- template: "{{ template_after_ssh_nopasswd }}"
-  #  path: "{{ path_after_ssh_nopasswd }}"
-
 # ====================================
 # 文件 / file
 # -- 指在Ansible服务端的文件
-
-# SSH 密钥
-file_ssh_nopassword_key_private: "SSH/id_rsa"
-
-# SSH 公钥
-file_ssh_nopassword_key_public: "SSH/id_rsa.pub"
-
-# 授权公钥文件
-# --- 有几个主机，就需要在这个文件中创建多少行
-# --- 只用改变最后的主机名的部分
-file_ssh_nopassword_authorized_keys: "SSH/authorized_keys"
 
 # MHA 安装介质
 # --- Manager
 file_mha_install_media_manager: "install_media/mha4mysql-manager-0.58-0.el7.centos.noarch.rpm"
 # --- Node
 file_mha_install_media_node: "install_media/mha4mysql-node-0.58-0.el7.centos.noarch.rpm"
-
-# --- Total
-list_mha_install_media_manager:
-  - "{{ file_mha_install_media_manager }}"
-  - "{{ file_mha_install_media_node }}"
-
-list_mha_install_media_node:
-  - "{{ file_mha_install_media_node }}"
 
 # 故障切换脚本
 # -- 因为包含自定义的脚本部分，所以最好是用模板的形式，而不是文件的形式
@@ -76,13 +41,6 @@ file_mha_script_power_manager: "mha/power_manager"
 
 # 通知脚本
 file_mha_script_send_report: "mha/send_report"
-
-# MHA 脚本 / 调用列表
-list_mha_script:
-  #- "{{ file_mha_script_master_ip_failover }}"
-  - "{{ file_mha_script_master_ip_online_change }}"
-  - "{{ file_mha_script_power_manager }}"
-  - "{{ file_mha_script_send_report }}"
 
 # ====================================
 # 路径 / path
@@ -116,124 +74,38 @@ path_mha_extension_script_do_mha: "{{ directory_mha_script }}/do_mha.sh"
 # find / -name "HealthCheck.pm"
 path_mha_extension_script_HealthCheck: "/usr/share/perl5/vendor_perl/MHA/HealthCheck.pm"
 
-# SSH用户自动创建Known_hosts
-path_after_ssh_nopasswd: "{{ directory_mha_script }}/after_ssh_nopasswd.sh"
-
 # ====================================
 # 文件夹 / directory
-# -- 指要在远端服务器上创建或存在的文件夹路径
-
-# SSH 等价目录
-directory_ssh_nopasswd: "/home/mha/.ssh/"
-
-# 软件上传目录
-directory_mha_install_media: "/software_upload/mysql_mha"
-
-# MHA 配置目录
-directory_mha_config: "/etc/mha"
-
-# MHA 脚本目录
-directory_mha_script: "{{ directory_mha_config }}/script"
-
-# MHA 日志目录
-directory_mha_log: "/var/log/mha"
-
-# MHA 工作目录
-directory_mha_remote_workdir: "/data1/mha/remote_workdir"
-directory_mha_manager_workdir: "/data1/mha/manager_workdir"
-
-# MySQL主库端 BINLOG 所在的目录
-directory_master_binlog: "/data1/mysql/binlog"
-
-# 目录 / Total
-list_directory_manager:
-  - "{{ directory_ssh_nopasswd }}"
-  - "{{ directory_mha_install_media }}"
-  - "{{ directory_mha_config }}"
-  #- "{{ directory_mha_script }}"
-  - "{{ directory_mha_log }}"
-  - "{{ directory_mha_manager_workdir }}"
-
-list_directory_node:
-  - "{{ directory_ssh_nopasswd }}"
-  - "{{ directory_mha_install_media }}"
-  - "{{ directory_mha_config }}"
-  - "{{ directory_mha_script }}"
-  - "{{ directory_mha_log }}"
-  - "{{ directory_mha_remote_workdir }}"
 
 # ====================================
-# MySQL MHA 相关参数
-# -- 不同的环境，只需要修改这里的配置
+# 列表
 
-# 当前脚本在同一个MHA Manager节点上第几次运行
-# - 如果在同一个MHA Manager节点上第二次运行，需要改成【2】，以此类推
-# - 如果在不同的MHA Manager节点上第一次运行，则该参数必须为【1】
-# ----------------
-# - 该参数影响脚本实际执行行为，务必按照上述规则正确配置
-mha_install_time: 1
+# 扩展脚本模板与目标位置
+list_template_mha_script:
+  - template: "{{ template_mha_script_master_ip_failover }}"
+    path: "{{ path_mha_script_master_ip_failover }}"
+  - template: "{{ template_mha_extension_script_call_do_mha }}"
+    path: "{{ path_mha_extension_script_call_do_mha }}"
+  - template: "{{ template_mha_extension_script_do_mha }}"
+    path: "{{ path_mha_extension_script_do_mha }}"
+  - template: "{{ template_mha_extension_script_HealthCheck }}"
+    path: "{{ path_mha_extension_script_HealthCheck }}"
 
-# 应用配置文件名称
-# --- 默认按照执行次数去命名应用配置文件名
-mha_conf_app_name: "app_{{ mha_install_time }}"
+# 安装介质：管理端
+list_mha_install_media_manager:
+  - "{{ file_mha_install_media_manager }}"
+  - "{{ file_mha_install_media_node }}"
 
-# -- MHA的Linux管理用户
-# -- MHA所有的成员主机上面都需要有MHA管理用户
-# -- 并且配置了SUDO权限与SSH等价
-# -- MHA扩展脚本：依赖该用户
-mha_linux_user: "mha"
-mha_linux_user_password: "密码"
+# 安装介质：成员端
+list_mha_install_media_node:
+  - "{{ file_mha_install_media_node }}"
 
-# -- 数据库用户 / 用于主从复制的用户
-mysql_replication_user_name: "repl"
-mysql_replication_user_password: "密码"
-
-# -- 数据库用户 / MHA
-mysql_mha_user_name: "mha"
-mysql_mha_user_password: "密码"
-
-# -- 涉及到的服务器
-mysql_replication:
-  server1:
-    host: "192.168.232.11"
-    hostname: "mysql1"
-    port: 3306
-  server2:
-    host: "192.168.232.12"
-    hostname: "mysql2"
-    port: 3306
-
-# MHA管理节点
-mha_manager_host: "192.168.232.13"
-mha_manager_hostname: "mysql3"
-
-# --------------------------
-# 操作系统组
-list_linux_group:
-  - group_name: mysql
-    gid: 2000
-  # MySQL MHA 组
-  - group_name: "{{ mha_linux_user }}"
-    gid: 2001
-
-# --------------------------
-# 操作系统用户
-list_linux_user:
-  # MHA用户
-  # --- 系统的MHA用户，需要开启SSH等价
-  # --- 最好不要直接使用Linux的管理用户【root】作为MHA的管理用户
-  - username: "{{ mha_linux_user }}"
-    uid: 2001
-    group: "{{ mha_linux_user }}"
-    groups: 
-      - "mysql"
-    password: "{{ mha_linux_user_password }}"
-    dir_home: "/home/{{ mha_linux_user }}"
-    shell: "/bin/bash"
-    comment: "MySQL MHA的Linux系统管理用户"
-
-# ====================================
-# 其他变量
+# MHA 脚本 / 调用列表
+list_mha_script:
+  #- "{{ file_mha_script_master_ip_failover }}"
+  - "{{ file_mha_script_master_ip_online_change }}"
+  - "{{ file_mha_script_power_manager }}"
+  - "{{ file_mha_script_send_report }}"
 
 # YUM软件包
 list_rpm_package:
@@ -252,3 +124,61 @@ list_rpm_package:
   - perl-DBD-MySQL
   - perl-DBI
   - mysql-libs
+
+# ====================================
+# 主机信息
+
+# -- 涉及到的服务器
+mysql_replication:
+  server1:
+    host: "{{ host_info[0].ip }}"
+    hostname: "{{ host_info[0].name }}"
+    port: 3306
+  server2:
+    host: "{{ host_info[1].ip }}"
+    hostname: "{{ host_info[1].name }}"
+    port: 3306
+
+# MHA管理节点
+mha_manager_host: "{{ host_info[2].ip }}"
+mha_manager_hostname: "{{ host_info[2].ip }}"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Begin
+
+# ====================================
+# 用户：操作系统
+
+# -- MHA的Linux管理用户
+# -- MHA所有的成员主机上面都需要有MHA管理用户
+# -- 并且配置了SUDO权限与SSH等价
+# -- MHA扩展脚本：依赖该用户
+mha_linux_user: "mha"
+mha_linux_user_password: "oracle"
+
+# ====================================
+# 用户：数据库
+
+# -- 数据库用户 / 用于主从复制的用户
+mysql_replication_user_name: "repl"
+mysql_replication_user_password: "oracle"
+
+# -- 数据库用户 / MHA
+mysql_mha_user_name: "mha"
+mysql_mha_user_password: "oracle"
+
+# ====================================
+# MySQL MHA 相关参数
+# -- 不同的环境，只需要修改这里的配置
+
+# 当前脚本在同一个MHA Manager节点上第几次运行
+# - 如果在同一个MHA Manager节点上第二次运行，需要改成【2】，以此类推
+# - 如果在不同的MHA Manager节点上第一次运行，则该参数必须为【1】
+# ----------------
+# - 该参数影响脚本实际执行行为，务必按照上述规则正确配置
+mha_install_time: 1
+
+# 应用配置文件名称
+# --- 默认按照执行次数去命名应用配置文件名
+mha_conf_app_name: "app_{{ mha_install_time }}"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Finished

@@ -41,19 +41,7 @@
   with_items:
     - "{{ list_linux_user }}"
 
-# SSH 等价
-
-# 获取生成的密钥的公钥
-# --- 这里，只看MHA的操作系统的管理用户
-#- name: 获取创建的Linux用户的公钥
-#  shell: "cat /home/{{ mha_linux_user }}/.ssh/id_rsa.pub"
-#  register: linux_key_public_user_current
-  
-# 显示获取的公钥
-#- name: 输出创建的Linux用户的公钥
-#  debug:
-#    msg: "{{ linux_key_public_user_current['stdout'] }}"
-
+# SSH等价
 # 将固定的密钥与公钥文件上传到目标服务器的目标位置
 - name: MHA的操作系统管理用户的【私钥】
   copy:

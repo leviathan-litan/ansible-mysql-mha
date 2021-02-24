@@ -1,4 +1,3 @@
-
 # ====================================
 # 模版 / template
 
@@ -16,13 +15,13 @@ file_keepalived_install_media: "install_media/keepalived-2.0.20.tar.gz"
 # -- 指要发送到远端服务器的文件的绝对路径
 
 # KeepAlived源码包安装日志 / configure
-path_keepalived_install_log_configure: "{{ directory_install_log }}/keepalived_source_install-configure.log"
+path_keepalived_install_log_configure: "{{ directory_keepalived_install_log }}/keepalived_source_install-configure.log"
 
 # KeepAlived源码包安装日志 / make
-path_keepalived_install_log_make: "{{ directory_install_log }}/keepalived_source_install-make.log"
+path_keepalived_install_log_make: "{{ directory_keepalived_install_log }}/keepalived_source_install-make.log"
 
 # KeepAlived源码包安装日志 / make install
-path_keepalived_install_log_make_install: "{{ directory_install_log }}/keepalived_source_install-make_install.log"
+path_keepalived_install_log_make_install: "{{ directory_keepalived_install_log }}/keepalived_source_install-make_install.log"
 
 # KeepAlived配置文件
 path_keepalived_config_sample: "{{ directory_keepalived_base }}/etc/keepalived/keepalived.conf"
@@ -38,37 +37,12 @@ path_keepalived_sbin: "/usr/sbin/keepalived"
 
 # ====================================
 # 文件夹 / directory
-# -- 指要在远端服务器上创建或存在的文件夹路径
 
-# 安装过程日志存放路径
-directory_install_log: "/software_upload"
 
-# 上传软件目录
-directory_software_upload: "/software_upload"
-
-# KeepAlive 安装介质解压后目录
-# --- 解压后，后生成一个源码包名称的目录
-# --- 这里跟上的目录名称要和上面选择的源码包的名称一致
-directory_keepalived_install_media_unzip: "{{ directory_software_upload }}/keepalived-2.0.20"
-
-# KeepAlived 软件安装目录
-directory_keepalived_base: "/usr/local/keepalived"
-
-# KeepAlived 配置文件目录
-directory_keepalived_config: "/etc/keepalived"
-
-# 整体调用
-list_directory:
-  - "{{ directory_software_upload }}"
-  #- "{{ directory_keepalived_install_media_unzip }}"
-  - "{{ directory_keepalived_base }}"
-  - "{{ directory_keepalived_config }}"
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Begin
 
 # ====================================
-# 其他变量
-
-# ====================================
-# KeepAlived 参数配置
+# KeepAlived / 参数配置
 
 # KeepAlived 路由ID
 keepalived_virtual_router_id: 52
@@ -78,3 +52,5 @@ keepalived_virtual_ip: "192.168.232.10"
 
 # KeepAlived VIP 绑定到哪块网卡上
 keepalived_nic_name: "ens32"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Finished

@@ -135,7 +135,8 @@ innodb_flush_method                 = O_DIRECT
 innodb_buffer_pool_dump_at_shutdown = 1
 innodb_buffer_pool_load_at_startup  = 1
 
-innodb_flush_log_at_trx_commit       = 0
+# 这个参数不能设置为【0】，有可能有数据丢失风险
+innodb_flush_log_at_trx_commit       = 1
 
 innodb_file_per_table
 

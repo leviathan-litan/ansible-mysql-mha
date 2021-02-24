@@ -1,3 +1,7 @@
+# 注意：
+# 如果给同一个MySQL MHA的管理节点安装第二套MHA
+# 则【linux_first_install】要设置为【no】
+
 [mysql]
 192.168.232.11 mysql_server_id=11 db_role=master
 192.168.232.12 mysql_server_id=12 db_role=slave
@@ -7,6 +11,6 @@
 192.168.232.12 keepalived_priority=200
 
 [mysql_mha]
-192.168.232.11 mha_role=mha_node
-192.168.232.12 mha_role=mha_node
-192.168.232.13 mha_role=mha_manager
+192.168.232.11 linux_first_install=yes mha_role=mha_node
+192.168.232.12 linux_first_install=yes mha_role=mha_node
+192.168.232.13 linux_first_install=yes mha_role=mha_manager

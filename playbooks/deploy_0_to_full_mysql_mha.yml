@@ -9,6 +9,9 @@
 - name: Linux
   hosts: 
     - all
+  vars_files:
+    - "roles/mysql/vars/main.yml"
+    - "roles/mysql_mha/vars/main.yml"
   roles:
   - { role: linux }
 
@@ -19,6 +22,8 @@
 - name: KeepAlived
   hosts: 
     - keepalived
+  vars_files:
+    - "roles/linux/vars/main.yml"
   roles:
   - { role: keepalived }
 
@@ -29,6 +34,8 @@
 - name: MySQL
   hosts: 
     - mysql
+  vars_files:
+    - "roles/linux/vars/main.yml"
   roles:
   - { role: mysql }
 
@@ -40,5 +47,8 @@
 - name: MySQL MHA
   hosts: 
     - mysql_mha
+  vars_files:
+    - "roles/linux/vars/main.yml"
+    - "roles/mysql/vars/main.yml"
   roles:
   - { role: mysql_mha }

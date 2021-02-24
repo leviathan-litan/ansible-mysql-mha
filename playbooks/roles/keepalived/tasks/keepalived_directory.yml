@@ -1,9 +1,0 @@
-# Make Directory
-- name: 创建目录
-  file:
-    path: "{{ item }}"
-    owner: root
-    group: root
-    mode: 0755
-    state: directory
-  with_items: "{{ list_directory }}"

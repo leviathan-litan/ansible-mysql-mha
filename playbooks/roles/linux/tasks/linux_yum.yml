@@ -8,13 +8,13 @@
     line: 'keepcache=1'
 
 # 创建上传离线RPM目录
-#- name: 创建上传离线RPM的目录
-#  file:
-#    path: "{{ directory_yum_install_media }}"
-#    owner: root
-#    group: root
-#    mode: 0755
-#    state: directory
+- name: 创建上传离线RPM的目录
+  file:
+    path: "{{ directory_yum_install_media }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
 
 # 上传离线YUM源
 - name: 上传YUM离线RPM包

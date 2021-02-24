@@ -1,9 +1,47 @@
 # Make Directory
-- name: 创建目录
+- name: 创建目录：Linux
   file:
     path: "{{ item }}"
     owner: root
     group: root
     mode: 0755
     state: directory
-  with_items: "{{ list_directory }}"
+  with_items: "{{ list_directory_linux }}"
+
+- name: 创建目录：KeepAlived
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+  with_items: "{{ list_directory_keepalived }}"
+
+- name: 创建目录：MySQL
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+  with_items: "{{ list_directory_mysql }}"
+
+- name: 创建目录：MySQL MHA / Manager
+  file:
+    path: "{{ item }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+    state: directory
+  with_items: "{{ list_directory_mha_manager }}"
+  when: mha_role == "mha_manager" and mha_install_time == 1
+
+- name: 创建目录：MySQL MHA / Node
+  file:
+    path: "{{ item }}"
+    owner: "{{ mha_linux_user }}"
+    group: "{{ mha_linux_user }}"
+    mode: 0755
+    state: directory
+  with_items: "{{ list_directory_mha_node }}"
+  when: mha_role == "mha_node"

@@ -7,6 +7,9 @@ template_yum_repo: "yum/centos_7_offline.repo.j2"
 # 文件：/etc/hosts
 template_linux_hosts: "etc/hosts.j2"
 
+# SSH用户自动创建Known_hosts
+template_after_ssh_nopasswd: "shell_script/after_ssh_nopasswd.sh.j2"
+
 # ====================================
 # 文件 / file
 # -- 指在Ansible服务端的文件
@@ -24,6 +27,17 @@ file_yum_install_media: "yum/rpm.tar.gz"
 # 文件 /etc/hosts
 file_linux_hosts: "etc/hosts"
 
+# SSH 密钥
+file_ssh_nopassword_key_private: "SSH/id_rsa"
+
+# SSH 公钥
+file_ssh_nopassword_key_public: "SSH/id_rsa.pub"
+
+# 授权公钥文件
+# --- 有几个主机，就需要在这个文件中创建多少行
+# --- 只用改变最后的主机名的部分
+file_ssh_nopassword_authorized_keys: "SSH/authorized_keys"
+
 # ====================================
 # 路径 / path
 # -- 指要发送到远端服务器的文件的绝对路径
@@ -34,18 +48,32 @@ path_yum_conf: "/etc/yum.conf"
 # 文件 /etc/hosts
 path_linux_hosts: "/etc/hosts"
 
+# 文件 /etc/hosts 临时
+path_linux_hosts_ansible: "/etc/hosts.ansible"
+
 # 离线RPM的YUM源文件
 path_yum_repo: "{{ directory_yum_repo_base }}/centos_7_offline.repo"
+
+# SSH用户自动创建Known_hosts
+path_after_ssh_nopasswd: "{{ directory_mha_script }}/after_ssh_nopasswd.sh"
 
 # ====================================
 # 文件夹 / directory
 # -- 指要在远端服务器上创建或存在的文件夹路径
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Linux
+
+# SSH 等价目录
+directory_ssh_nopasswd: "/home/{{ mysql_mha_user_name }}/.ssh/"
 
 # YUM 仓库源文件 目录
 directory_yum_repo_base: "/etc/yum.repos.d"
 
 # 上传软件目录
 directory_software_upload: "/software_upload"
+
+# 离线RPM上传路径
+directory_yum_install_media: "{{ directory_software_upload }}/yum"
 
 # 备份目录
 directory_backup: "/backup"
@@ -55,6 +83,7 @@ directory_backup: "/backup"
 # -- 因此，在运行Ansible之前，如果需要挂载额外的数据盘，需要提前操作
 # -- 命令样例：
 # -- mount /dev/sdc /data
+# 修改该处的数据目录的设置，会修改当前脚本最终执行的数据目录的位置
 directory_data: "/data1"
 
 # 脚本目录
@@ -63,11 +92,78 @@ directory_script: "/script"
 # 光盘镜像挂载目录
 #directory_mount_point_iso: "/iso"
 
-# 离线RPM上传路径
-directory_yum_install_media: "{{ directory_software_upload }}/yum"
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ KeepAlived
 
-# 整体调用
-list_directory:
+# KeepAlive 安装介质解压后目录
+# --- 解压后，后生成一个源码包名称的目录
+# --- 这里跟上的目录名称要和上面选择的源码包的名称一致
+directory_keepalived_install_media_unzip: "{{ directory_software_upload }}/keepalived-2.0.20"
+
+# 安装过程日志存放路径
+directory_keepalived_install_log: "{{ directory_keepalived_install_media_unzip }}"
+
+# KeepAlived 软件安装目录
+directory_keepalived_base: "/usr/local/keepalived"
+
+# KeepAlived 配置文件目录
+directory_keepalived_config: "/etc/keepalived"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ MySQL
+
+# MySQL 安装介质解压目录
+directory_mysql_install_media_unzip: "{{ directory_software_upload }}/mysql"
+
+# MySQL 存放数据的基础目录
+directory_mysql_data_base: "{{ directory_data }}/mysql"
+
+# MySQL 数据目录
+directory_mysql_data: "{{ directory_mysql_data_base }}/datadir"
+
+# MySQL 临时目录
+directory_mysql_temp: "{{ directory_mysql_data_base }}/tempdir"
+
+# MySQL 二进制日志目录 / Binlog
+directory_mysql_log_binlog: "{{ directory_mysql_data_base }}/binlog"
+
+# MySQL 慢日志目录
+directory_mysql_log_slowlog: "{{ directory_mysql_data_base }}/slowlog"
+
+# MySQL Relay Log
+directory_mysql_log_relaylog: "{{ directory_mysql_data_base }}/relaylog"
+
+# MySQL SOCKET
+directory_mysql_socket: "{{ directory_mysql_data_base }}/socket"
+
+# MySQL PID
+directory_mysql_pid: "{{ directory_mysql_data_base }}/pid"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ MySQL MHA
+
+# 软件上传目录
+directory_mha_install_media: "{{ directory_software_upload }}/mysql_mha"
+
+# MHA 配置目录
+directory_mha_config: "/etc/mha"
+
+# MHA 日志目录
+directory_mha_log: "/var/log/mha"
+
+# MHA 脚本目录
+directory_mha_script: "{{ directory_mha_config }}/script"
+
+# MHA 数据根目录
+directory_mha_data_base: "{{ directory_data }}/mha"
+
+# MHA 工作目录
+directory_mha_remote_workdir: "{{ directory_mha_data_base }}/remote_workdir"
+directory_mha_manager_workdir: "{{ directory_mha_data_base }}/manager_workdir"
+
+# ====================================
+# 列表
+
+# 目录
+list_directory_linux:
+  - "{{ directory_ssh_nopasswd }}"
   - "{{ directory_software_upload }}"
   - "{{ directory_backup }}"
   - "{{ directory_data }}"
@@ -75,25 +171,35 @@ list_directory:
   #- "{{ directory_mount_point_iso }}"
   - "{{ directory_yum_install_media }}"
 
-# ====================================
-# 主机信息
-# --- 需要根据环境信息修改的部分
+list_directory_keepalived:
+  - "{{ directory_keepalived_install_log }}"
+  - "{{ directory_keepalived_base }}"
+  - "{{ directory_keepalived_config }}"
 
-host_info:
-  mysql:
-    server1:
-      hostname: "mysql1"
-      ip: "192.168.232.11"
-    server2:
-      hostname: "mysql2"
-      ip: "192.168.232.12"
-  mha:
-    manager:
-      hostname: "mysql3"
-      ip: "192.168.232.13"
+list_directory_mysql:
+  - "{{ directory_mysql_data_base }}"
+  - "{{ directory_mysql_data }}"
+  - "{{ directory_mysql_temp }}"
+  - "{{ directory_mysql_log_binlog }}"
+  - "{{ directory_mysql_log_slowlog }}"
+  - "{{ directory_mysql_log_relaylog }}"
+  - "{{ directory_mysql_socket }}"
+  - "{{ directory_mysql_pid }}"
+  - "{{ directory_mysql_install_media_unzip }}"
 
-# ====================================
-# 其他变量
+list_directory_mha_manager:
+  - "{{ directory_mha_install_media }}"
+  - "{{ directory_mha_config }}"
+  - "{{ directory_mha_script }}"
+  - "{{ directory_mha_log }}"
+  - "{{ directory_mha_manager_workdir }}"
+
+list_directory_mha_node:
+  - "{{ directory_mha_install_media }}"
+  - "{{ directory_mha_config }}"
+  - "{{ directory_mha_script }}"
+  - "{{ directory_mha_log }}"
+  - "{{ directory_mha_remote_workdir }}"
 
 # YUM 要安装的RPM软件包
 # -- 最好按照字母顺序写
@@ -128,3 +234,59 @@ list_rpm_package:
   - popt-devel
   - tree
   - wget
+
+# 操作系统 / 用户组
+list_linux_group:
+  # 数据库 组
+  - group_name: "{{ mysql_linux_user_name }}"
+    gid: 2000
+  # MySQL MHA 组
+  - group_name: "{{ mha_linux_user }}"
+    gid: 2001
+
+# 操作系统 / 用户
+list_linux_user:
+  # MySQL用户
+  - username: "{{ mysql_linux_user_name }}"
+    uid: 2000
+    # group 只能是字符串
+    group: "{{ mysql_linux_user_name }}"
+    # groups 可以是数组
+    groups: 
+      - "{{ mysql_linux_user_name }}"
+    password: "{{ mysql_linux_user_password }}"
+    dir_home: "/home/{{ mysql_linux_user_name }}"
+    shell: "/bin/bash"
+    comment: "MySQL数据库的Linux系统用户"
+  # MHA用户
+  # --- 系统的MHA用户，需要开启SSH等价
+  # --- 最好不要直接使用Linux的管理用户【root】作为MHA的管理用户
+  - username: "{{ mha_linux_user }}"
+    uid: 2001
+    group: "{{ mha_linux_user }}"
+    groups: 
+      - "{{ mysql_linux_user_name }}"
+    password: "{{ mha_linux_user_password }}"
+    dir_home: "/home/{{ mha_linux_user }}"
+    shell: "/bin/bash"
+    comment: "MySQL MHA的Linux系统管理用户"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Begin
+
+# ====================================
+# 主机信息
+# --- 需要根据环境信息修改的部分
+# --- 按照数组顺序，依次为：第一台服务器、第二台服务器，...
+
+host_info:
+  # MySQL：节点一 / MHA 成员节点
+  - ip: "192.168.232.11"
+    name: "mysql1"
+  # MySQL：节点二 / MHA 成员节点
+  - ip: "192.168.232.12"
+    name: "mysql2"
+  # MySQL MHA：管理节点
+  - ip: "192.168.232.13"
+    name: "mysql3"
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Finished

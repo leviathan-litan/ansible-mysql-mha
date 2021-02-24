@@ -206,7 +206,7 @@ function mysql_do_orig() {
     # -- 从库设为只读
     do_sql "$host_mysql_master_orig" "set global read_only=1;"
 
-    # -- 启用半同步从库端参数
+    # -- 启用半同步【从库端】参数
     do_sql "$host_mysql_master_orig" "set global rpl_semi_sync_master_enabled=0;"
     do_sql "$host_mysql_master_orig" "set global rpl_semi_sync_slave_enabled=1;"
 
@@ -218,6 +218,11 @@ function mysql_do_orig() {
 
     # -- 启动从库的复制
     do_sql "$host_mysql_master_orig" "start slave;"
+	
+	# -- 重启Slave的IO_THREAD进程
+    # |- 从库端启用了半同步参数后，需要重启【IO_THREAD】进程
+	do_sql "$host_mysql_master_orig" "stop slave io_thread"
+	do_sql "$host_mysql_master_orig" "start slave io_thread"
 
 }
 

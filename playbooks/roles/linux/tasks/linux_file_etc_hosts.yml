@@ -1,24 +1,48 @@
-# 查看Ansible Facts
-# --- 这里原本是希望通过Ansible的变量循环，自动生成Linux的文件：/etc/hosts
-# --- 后面再实现
-- name: 查看Ansible Facts
+# =====================
+# 任务：/etc/hosts
+# =====================
+
+- name: 显示：变量[host_info]
   debug:
-    msg: "主机名【{{ ansible_hostname }}】IP地址【{{ ansible_default_ipv4['address'] }}】"
+    msg: "{{ host_info }}"
 
-# 将Ansible服务端准备好的文件拷贝到目标服务器的目标路径 / 文件的方式
-#- name: "文件：{{ path_linux_hosts }}"
-#  copy:
-#    force: yes
-#    backup: yes
-#    src: "{{ file_linux_hosts }}"
-#    dest: "{{ path_linux_hosts }}"
-
-# 将Ansible服务端准备好的文件拷贝到目标服务器的目标路径 / 模板的方式
-- name: "文件：{{ path_linux_hosts }}"
+# --- 如果是第一次安装的话，按照模板刷文件：/etc/hosts
+- name: "文件：{{ path_linux_hosts }} / 第一次安装"
   template:
-     backup: yes
-     src: "{{ template_linux_hosts }}"
-     dest: "{{ path_linux_hosts }}"
-     owner: root
-     group: root
-     mode: 0755
+    backup: yes
+    src: "{{ template_linux_hosts }}"
+    dest: "{{ path_linux_hosts }}"
+    owner: root
+    group: root
+    mode: 0755
+  when: linux_first_install == "yes"
+
+# --- 如果不是第一次安装，那么文件应该就已经是模板的格式
+# |-- 那么，就往文件的目标位置刷文件
+
+- name: 文件：/etc/hosts.ansible / 清空
+  shell: "echo '' > {{ path_linux_hosts_ansible }}"
+  when: linux_first_install == "no"
+
+- name: 文件：/etc/hosts.ansible / 填充
+  shell: "echo '# --- Host: {{ item.name }}\n{{ item.ip }}   {{ item.name }}\n' >> {{ path_linux_hosts_ansible }}"
+  with_items:
+    - "{{ host_info }}"
+  when: linux_first_install == "no"
+
+- name: 文件：/etc/hosts.ansible / 写入变量
+  shell: "cat {{ path_linux_hosts_ansible }}"
+  register: path_linux_hosts_ansible_content
+  when: linux_first_install == "no"
+
+- name: "文件：{{ path_linux_hosts }} / 非第一次安装"
+  blockinfile:
+    path: "{{ path_linux_hosts }}"
+    marker: "# {mark} Add Hosts Record by Ansible"
+    backup: yes
+    create: yes
+    state: present
+    block: "{{ path_linux_hosts_ansible_content.stdout }}"
+    insertafter: "^# 主网卡 / Public"
+    #insertbefore: "^# --- Host"
+  when: linux_first_install == "no"

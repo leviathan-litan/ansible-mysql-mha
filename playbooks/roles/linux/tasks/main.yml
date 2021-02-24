@@ -1,11 +1,5 @@
-# 目标服务器 目录相关操作
-- import_tasks: linux_directory.yml
-
 # 配置YUM，并根据变量文件中的定义，执行RPM包安装
 - import_tasks: linux_yum.yml
-
-# 配置时区
-- import_tasks: linux_timezone.yml
 
 # SELinux
 - import_tasks: linux_selinux.yml
@@ -13,5 +7,14 @@
 # 防火墙
 - import_tasks: linux_firewall.yml
 
+# 配置时区
+- import_tasks: linux_timezone.yml
+
 # 文件：/etc/hosts
 - import_tasks: linux_file_etc_hosts.yml
+
+# 用户
+- import_tasks: linux_user_group.yml
+
+# 目录
+- import_tasks: linux_directory.yml

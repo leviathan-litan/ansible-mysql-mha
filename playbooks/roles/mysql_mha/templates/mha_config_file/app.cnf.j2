@@ -23,7 +23,7 @@ hostname={{ mysql_replication['server1']['host'] }}
 port={{ mysql_replication['server1']['port'] }}
 
 # 主库端的BINLOG位置
-master_binlog_dir={{ directory_master_binlog }}
+master_binlog_dir={{ directory_mysql_log_binlog }}
 
 # 是否为备主
 candidate_master=1
@@ -38,7 +38,7 @@ hostname={{ mysql_replication['server2']['host'] }}
 port={{ mysql_replication['server2']['port'] }}
 
 # 主库端的BINLOG位置
-master_binlog_dir={{ directory_master_binlog }}
+master_binlog_dir={{ directory_mysql_log_binlog }}
 
 # 是否为备主
 candidate_master=1
