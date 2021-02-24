@@ -20,8 +20,8 @@
 - name: 创建目录：MySQL
   file:
     path: "{{ item }}"
-    owner: root
-    group: root
+    owner: "{{ mysql_linux_user_name }}"
+    group: "{{ mysql_linux_user_name }}"
     mode: 0755
     state: directory
   with_items: "{{ list_directory_mysql }}"

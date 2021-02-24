@@ -141,7 +141,7 @@ mysql_replication:
 
 # MHA管理节点
 mha_manager_host: "{{ host_info[2].ip }}"
-mha_manager_hostname: "{{ host_info[2].ip }}"
+mha_manager_hostname: "{{ host_info[2].name }}"
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Begin
 
