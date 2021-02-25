@@ -23,7 +23,7 @@
 #  when: db_role == "master"
 
 - name: 主库安装半同步模块 / semisync_master.so
-  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
+  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_master soname 'semisync_master.so';\""
   ignore_errors: yes
   when: db_role == "master"
 
@@ -81,7 +81,7 @@
   when: db_role == "slave"
 
 #- name: 从库安装半同步模块 / semisync_master.so
-#  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_slave soname 'semisync_master.so';\""
+#  shell: "mysql -u root -p'{{ mysql_database_user_root_password }}' -e \"install plugin rpl_semi_sync_master soname 'semisync_master.so';\""
 #  ignore_errors: yes
 #  when: db_role == "slave"
 

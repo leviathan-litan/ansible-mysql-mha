@@ -133,11 +133,11 @@ mysql_replication:
   server1:
     host: "{{ host_info[0].ip }}"
     hostname: "{{ host_info[0].name }}"
-    port: 3306
+    port: "{{ mysql_param_port }}"
   server2:
     host: "{{ host_info[1].ip }}"
     hostname: "{{ host_info[1].name }}"
-    port: 3306
+    port: "{{ mysql_param_port }}"
 
 # MHA管理节点
 mha_manager_host: "{{ host_info[2].ip }}"
@@ -154,17 +154,6 @@ mha_manager_hostname: "{{ host_info[2].name }}"
 # -- MHA扩展脚本：依赖该用户
 mha_linux_user: "mha"
 mha_linux_user_password: "oracle"
-
-# ====================================
-# 用户：数据库
-
-# -- 数据库用户 / 用于主从复制的用户
-mysql_replication_user_name: "repl"
-mysql_replication_user_password: "oracle"
-
-# -- 数据库用户 / MHA
-mysql_mha_user_name: "mha"
-mysql_mha_user_password: "oracle"
 
 # ====================================
 # MySQL MHA 相关参数

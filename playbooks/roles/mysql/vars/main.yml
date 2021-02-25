@@ -84,6 +84,13 @@ list_mysql_user:
 # 半同步的模块地址
 semisync_plugin_dir: "/usr/lib64/mysql/plugin"
 
+# ====================================
+# MySQL 主从复制
+
+# -- 主从复制的主库端的连接信息
+mysql_replication_master_host: "{{ host_info[0].ip }}"
+mysql_replication_master_port: "{{ mysql_param_port }}"
+
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Begin
 
 # ====================================
@@ -95,10 +102,20 @@ mysql_linux_user_password: "oracle"
 # 用户信息 / MySQL用户
 
 # -- root@localhost
-mysql_database_user_root_password: "oracle"
+mysql_database_user_root_password: "复杂一点点的密码"
+
+# -- 用于主从复制的用户
+mysql_replication_user_name: "repl"
+mysql_replication_user_password: "复杂一点点的密码"
+
+# -- MHA的数据库用户
+mysql_mha_user_name: "mha"
+mysql_mha_user_password: "复杂一点点的密码"
 
 # ====================================
 # MySQL 数据库参数
+# -- 替换MySQL参数文件：/etc/my.cnf
+# -- 如果要修改其他参数，可以直接修改模板文件中的设置
 
 # 数据库使用什么方式安装
 # 0 异步
@@ -107,6 +124,7 @@ mysql_semisync_enabled: "1"
 
 # MySQL 端口
 # -- 默认的端口配置
+# -- 会影响MySQL MHA中的端口设置
 mysql_param_port: "3306"
 
 # InnoDB 数据缓冲区
@@ -121,20 +139,5 @@ mysql_param_expire_logs_days: "7"
 
 # 半同步超时时间
 mysql_param_rpl_semi_sync_master_timeout: "1000"
-
-# ====================================
-# MySQL 主从复制
-
-# -- 主从复制的主库端的连接信息
-mysql_replication_master_host: "{{ host_info[0].ip }}"
-mysql_replication_master_port: "3306"
-
-# -- 用于主从复制的用户
-mysql_replication_user_name: "repl"
-mysql_replication_user_password: "oracle"
-
-# -- MHA的数据库用户
-mysql_mha_user_name: "mha"
-mysql_mha_user_password: "oracle"
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 需要修改的部分 / Finished
